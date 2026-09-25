@@ -92,11 +92,11 @@ jobs:
             apk-sha256.txt
           if-no-files-found: error
 
-      - name: Create v0.1.0 GitHub release
+      - name: Create v0.1.1 GitHub release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: v0.1.0
+          RELEASE_TAG: v0.1.1
         shell: bash
         run: |
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -104,7 +104,7 @@ jobs:
             exit 0
           fi
 
-          cp app/build/outputs/apk/debug/app-debug.apk "Riplow-Client-v0.1.0-debug.apk"
-          cp apk-sha256.txt "Riplow-Client-v0.1.0-sha256.txt"
+          cp app/build/outputs/apk/debug/app-debug.apk "Riplow-Client-v0.1.1-debug.apk"
+          cp apk-sha256.txt "Riplow-Client-v0.1.1-sha256.txt"
 
-          gh release create "$RELEASE_TAG"             "Riplow-Client-v0.1.0-debug.apk"             "Riplow-Client-v0.1.0-sha256.txt"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client v0.1.0"             --notes "First test release. Includes the verified debug APK and SHA-256 checksums."             --latest
+          gh release create "$RELEASE_TAG"             "Riplow-Client-v0.1.1-debug.apk"             "Riplow-Client-v0.1.1-sha256.txt"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client v0.1.1"             --notes "Hardened test release. Includes the verified debug APK and SHA-256 checksums."             --latest

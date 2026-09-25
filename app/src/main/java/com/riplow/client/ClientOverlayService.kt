@@ -55,7 +55,7 @@ class ClientOverlayService : Service() {
         }
 
         val notification: Notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_riplow)
             .setContentTitle("Riplow overlay active")
             .setContentText("Client menu and diagnostics are running.")
             .setOngoing(true)
