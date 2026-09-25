@@ -6,16 +6,22 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: riplow-android-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+      BUILD_TOOLS: /usr/local/lib/android/sdk/build-tools/35.0.0
 
     steps:
       - name: Checkout
@@ -53,10 +59,30 @@ jobs:
       - name: Verify APK outputs
         shell: bash
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          test -s app/build/outputs/apk/release/app-release-unsigned.apk
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/release/app-release-unsigned.apk
+          DEBUG_APK=app/build/outputs/apk/debug/app-debug.apk
+          RELEASE_APK=app/build/outputs/apk/release/app-release-unsigned.apk
+
+          test -s "$DEBUG_APK"
+          test -s "$RELEASE_APK"
+
+          echo "== File sizes =="
+          ls -lh "$DEBUG_APK" "$RELEASE_APK"
+
+          echo "== ZIP integrity: debug =="
+          unzip -t "$DEBUG_APK" >/dev/null
+
+          echo "== APK signature: debug =="
+          "$BUILD_TOOLS/apksigner" verify --verbose "$DEBUG_APK"
+
+          echo "== Package metadata: debug =="
+          BADGING=$("$BUILD_TOOLS/aapt2" dump badging "$DEBUG_APK")
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.riplow.client'"
+
+          echo "== Native library presence =="
+          unzip -l "$DEBUG_APK" | grep -Eq 'lib/(arm64-v8a|armeabi-v7a|x86_64|x86)/libriplow_core\.so'
+
+          echo "== Release APK ZIP integrity =="
+          unzip -t "$RELEASE_APK" >/dev/null
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
@@ -86,5 +112,5 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "Riplow Client v0.1.0" \
-            --notes "First test release. Includes the debug APK for Android/Bedrock client testing." \
+            --notes "First test release. Includes the verified debug APK for Android/Bedrock client testing." \
             --latest
