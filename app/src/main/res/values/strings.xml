@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Riplow</string>
-    <string name="app_tagline">Performance is the blood of Riplow.</string>
-    <string name="launcher_status">Native core online</string>
-    <string name="launcher_subtitle">Bedrock utility client • native core • diagnostics</string>
+    <string name="app_name">Riplow Client</string>
+    <string name="app_tagline">A clean Bedrock companion — performance, HUD and diagnostics.</string>
+    <string name="launcher_status">Ready</string>
+    <string name="launcher_subtitle">Everything is local-first. No unfair gameplay automation.</string>
+    <string name="open_client">Open Riplow Menu</string>
     <string name="launch_minecraft">Launch Minecraft</string>
-    <string name="open_client">Enable Client Menu</string>
     <string name="refresh_diagnostics">Refresh</string>
-    <string name="version_format">Riplow %1$s</string>
+    <string name="version_format">Core %1$s</string>
 </resources>
