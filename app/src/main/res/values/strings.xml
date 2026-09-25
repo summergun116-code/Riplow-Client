@@ -2,10 +2,10 @@
 <resources>
     <string name="app_name">Riplow</string>
     <string name="app_tagline">Performance is the blood of Riplow.</string>
-    <string name="launcher_status">Client foundation ready</string>
+    <string name="launcher_status">Native core online</string>
     <string name="launcher_subtitle">Bedrock utility client • native core • diagnostics</string>
     <string name="launch_minecraft">Launch Minecraft</string>
-    <string name="open_client">Open Client</string>
-    <string name="settings">Settings</string>
+    <string name="open_client">Enable Client Menu</string>
+    <string name="refresh_diagnostics">Refresh</string>
     <string name="version_format">Riplow %1$s</string>
 </resources>
