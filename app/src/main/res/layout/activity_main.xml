@@ -1,34 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:fillViewport="true" android:background="@color/riplow_background">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="24dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="RIPLOW" android:textSize="34sp" android:textStyle="bold"
-            android:letterSpacing="0.08" android:textColor="@color/riplow_foreground"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" android:text="@string/app_tagline"
-            android:textSize="13sp" android:textColor="@color/riplow_secondary"/>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="28dp" android:orientation="vertical"
-            android:padding="20dp" android:background="@drawable/bg_card">
-            <TextView android:id="@+id/status" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/launcher_status" android:textSize="20sp" android:textStyle="bold"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/riplow_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RIPLOW"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:textColor="@color/riplow_foreground"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/app_tagline"
+            android:textSize="13sp"
+            android:textColor="@color/riplow_secondary"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/launcher_status"
+                android:textSize="20sp"
+                android:textStyle="bold"
                 android:textColor="@color/riplow_foreground"/>
-            <TextView android:id="@+id/subtitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:text="@string/launcher_subtitle"
-                android:textSize="14sp" android:textColor="@color/riplow_secondary"/>
-            <TextView android:id="@+id/core_version" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" android:textSize="13sp" android:textColor="@color/riplow_secondary"/>
+
+            <TextView
+                android:id="@+id/subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/launcher_subtitle"
+                android:textSize="14sp"
+                android:textColor="@color/riplow_secondary"/>
+
+            <TextView
+                android:id="@+id/core_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textSize="13sp"
+                android:textColor="@color/riplow_secondary"/>
+
+            <TextView
+                android:id="@+id/diagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textSize="12sp"
+                android:textColor="@color/riplow_secondary"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="16dp" android:orientation="horizontal">
-            <Button android:id="@+id/launch_button" android:layout_width="0dp" android:layout_height="56dp"
-                android:layout_weight="1" android:text="@string/launch_minecraft" android:textAllCaps="false"/>
-            <Space android:layout_width="12dp" android:layout_height="1dp"/>
-            <Button android:id="@+id/client_button" android:layout_width="0dp" android:layout_height="56dp"
-                android:layout_weight="1" android:text="@string/open_client" android:textAllCaps="false"/>
+
+        <Button
+            android:id="@+id/client_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/open_client"
+            android:textAllCaps="false"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/launch_button"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="@string/launch_minecraft"
+                android:textAllCaps="false"/>
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="1dp"/>
+
+            <Button
+                android:id="@+id/diagnostics_button"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="@string/refresh_diagnostics"
+                android:textAllCaps="false"/>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
