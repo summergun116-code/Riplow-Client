@@ -42,11 +42,7 @@ jobs:
       - name: Install Android SDK packages
         shell: bash
         run: |
-          sdkmanager --install \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "cmake;3.30.5" \
-            "ndk;27.0.12077973"
+          sdkmanager --install             "platforms;android-35"             "build-tools;35.0.0"             "cmake;3.30.5"             "ndk;27.0.12077973"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -84,6 +80,8 @@ jobs:
           echo "== Release APK ZIP integrity =="
           unzip -t "$RELEASE_APK" >/dev/null
 
+          sha256sum "$DEBUG_APK" "$RELEASE_APK" | tee apk-sha256.txt
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -91,6 +89,7 @@ jobs:
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/app-release-unsigned.apk
+            apk-sha256.txt
           if-no-files-found: error
 
       - name: Create v0.1.0 GitHub release
@@ -106,11 +105,6 @@ jobs:
           fi
 
           cp app/build/outputs/apk/debug/app-debug.apk "Riplow-Client-v0.1.0-debug.apk"
+          cp apk-sha256.txt "Riplow-Client-v0.1.0-sha256.txt"
 
-          gh release create "$RELEASE_TAG" \
-            "Riplow-Client-v0.1.0-debug.apk" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Riplow Client v0.1.0" \
-            --notes "First test release. Includes the verified debug APK for Android/Bedrock client testing." \
-            --latest
+          gh release create "$RELEASE_TAG"             "Riplow-Client-v0.1.0-debug.apk"             "Riplow-Client-v0.1.0-sha256.txt"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client v0.1.0"             --notes "First test release. Includes the verified debug APK and SHA-256 checksums."             --latest

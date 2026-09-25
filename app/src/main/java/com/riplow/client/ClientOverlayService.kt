@@ -1,19 +1,24 @@
 package com.riplow.client
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.app.NotificationCompat
 
 class ClientOverlayService : Service() {
     private lateinit var windowManager: WindowManager
@@ -27,8 +32,46 @@ class ClientOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        startOverlayForegroundService()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createBubble()
+    }
+
+    private fun startOverlayForegroundService() {
+        val channelId = "riplow_overlay"
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    channelId,
+                    "Riplow overlay",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = "Keeps the user-enabled Riplow overlay available while Minecraft is in use."
+                    setShowBadge(false)
+                }
+            )
+        }
+
+        val notification: Notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Riplow overlay active")
+            .setContentText("Client menu and diagnostics are running.")
+            .setOngoing(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                1001,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(1001, notification)
+        }
     }
 
     private fun params(width: Int, height: Int) =
@@ -82,7 +125,7 @@ class ClientOverlayService : Service() {
         }
 
         for (id in moduleIds) {
-            val button = Button(this).apply {
+            val button = android.widget.Button(this).apply {
                 text = label(id)
                 isAllCaps = false
                 setTextColor(Color.WHITE)
@@ -115,14 +158,19 @@ class ClientOverlayService : Service() {
     }
 
     private fun backgroundShape(color:Int,radius:Int)=GradientDrawable().apply {
-        setColor(color); cornerRadius=radius.toFloat(); setStroke(1,Color.rgb(44,44,52))
+        setColor(color)
+        cornerRadius=radius.toFloat()
+        setStroke(1,Color.rgb(44,44,52))
     }
 
     override fun onDestroy() {
-        panel?.let { windowManager.removeView(it) }
-        if (::bubble.isInitialized) windowManager.removeView(bubble)
+        panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
+        if (::bubble.isInitialized && bubble.isAttachedToWindow) windowManager.removeView(bubble)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent:Intent?):IBinder?=null
 
@@ -135,9 +183,11 @@ class ClientOverlayService : Service() {
         override fun onTouch(view:View,event:MotionEvent):Boolean {
             when(event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    downX=event.rawX; downY=event.rawY
+                    downX=event.rawX
+                    downY=event.rawY
                     val p=view.layoutParams as WindowManager.LayoutParams
-                    startX=p.x; startY=p.y
+                    startX=p.x
+                    startY=p.y
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {

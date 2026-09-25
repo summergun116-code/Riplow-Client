@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,6 +21,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.launch_button).setOnClickListener { launchMinecraft() }
         findViewById<Button>(R.id.client_button).setOnClickListener { enableClientMenu() }
         findViewById<Button>(R.id.diagnostics_button).setOnClickListener { refreshDiagnostics() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshDiagnostics()
     }
 
     private fun refreshDiagnostics() {
@@ -40,7 +46,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        startService(Intent(this, ClientOverlayService::class.java))
+        ContextCompat.startForegroundService(
+            this,
+            Intent(this, ClientOverlayService::class.java)
+        )
         findViewById<TextView>(R.id.status).text = "Riplow menu enabled"
     }
 
