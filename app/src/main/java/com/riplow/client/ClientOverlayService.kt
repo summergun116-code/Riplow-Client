@@ -61,14 +61,16 @@ class ClientOverlayService : Service() {
                 }
             )
         }
-        val notification: Notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_stat_riplow)
-            .setContentTitle("Riplow overlay active")
-            .setContentText("Client menu and diagnostics are running.")
-            .setOngoing(true)
-            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_SERVICE)
-            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
-            .build()
+
+        val notification: Notification =
+            androidx.core.app.NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_stat_riplow)
+                .setContentTitle("Riplow overlay active")
+                .setContentText("Client menu and diagnostics are running.")
+                .setOngoing(true)
+                .setCategory(androidx.core.app.NotificationCompat.CATEGORY_SERVICE)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+                .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(1001, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -79,15 +81,24 @@ class ClientOverlayService : Service() {
 
     private fun overlayParams(width: Int, height: Int): WindowManager.LayoutParams =
         WindowManager.LayoutParams(
-            width, height,
+            width,
+            height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = 18
-            y = 110
+            gravity = Gravity.CENTER
+            x = 0
+            y = 0
         }
+
+    private fun calculateMenuSize() {
+        val metrics = resources.displayMetrics
+        menuWidth = (metrics.widthPixels * 0.86f).toInt().coerceAtLeast(dp(520))
+        menuHeight = (metrics.heightPixels * 0.82f).toInt().coerceAtLeast(dp(310))
+        menuWidth = menuWidth.coerceAtMost(dp(980))
+        menuHeight = menuHeight.coerceAtMost(dp(620))
+    }
 
     private fun createBubble() {
         bubble = TextView(this).apply {
@@ -100,20 +111,36 @@ class ClientOverlayService : Service() {
             setOnClickListener { togglePanel() }
             setOnTouchListener(DragTouchListener())
         }
-        windowManager.addView(bubble, overlayParams(54, 54))
+        windowManager.addView(bubble, overlayParams(dp(54), dp(54)).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = dp(18)
+            y = dp(76)
+        })
     }
 
     private fun showPanel() {
         if (panel != null) return
         activeTab = "Modules"
+        calculateMenuSize()
         panel = buildPanel()
+        panel?.alpha = 0f
+        panel?.scaleX = 0.97f
+        panel?.scaleY = 0.97f
         windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
+        panel?.animate()
+            ?.alpha(1f)
+            ?.scaleX(1f)
+            ?.scaleY(1f)
+            ?.setDuration(180)
+            ?.start()
     }
 
     private fun togglePanel() {
         if (panel != null) {
-            windowManager.removeView(panel)
-            panel = null
+            panel?.animate()?.alpha(0f)?.setDuration(110)?.withEndAction {
+                panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
+                panel = null
+            }?.start()
         } else {
             showPanel()
         }
@@ -122,37 +149,50 @@ class ClientOverlayService : Service() {
     private fun buildPanel(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(18, 18, 18, 18)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
             background = backgroundShape(Color.rgb(12, 13, 16), 26)
             elevation = 18f
         }
 
         val header = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+
         header.addView(TextView(this).apply {
             text = "RIPLOW"
-            textSize = 19f
+            textSize = 20f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
-        }, LinearLayout.LayoutParams(0, 44, 1f))
+        }, LinearLayout.LayoutParams(0, dp(38), 1f))
+
         header.addView(TextView(this).apply {
-            text = "0.1.1"
-            textSize = 11f
-            setTextColor(Color.LTGRAY)
+            text = "24 modules"
+            textSize = 10f
+            setTextColor(Color.rgb(185, 188, 196))
             gravity = Gravity.CENTER
-            background = backgroundShape(Color.rgb(26, 27, 31), 50)
-            setPadding(12, 0, 12, 0)
-        }, LinearLayout.LayoutParams(-2, 34))
+            background = backgroundShape(Color.rgb(27, 29, 34), 50)
+            setPadding(dp(12), 0, dp(12), 0)
+        }, LinearLayout.LayoutParams(-2, dp(32)))
+
+        header.addView(TextView(this).apply {
+            text = "×"
+            textSize = 20f
+            setTextColor(Color.rgb(170, 173, 181))
+            gravity = Gravity.CENTER
+            setOnClickListener { togglePanel() }
+        }, LinearLayout.LayoutParams(dp(40), dp(38)))
+
         root.addView(header)
+
         root.addView(TextView(this).apply {
-            text = "Client overlay  •  server-safe utilities"
-            textSize = 11f
-            setTextColor(Color.rgb(145, 148, 156))
+            text = "Landscape ClickGUI  •  helper / QoL tools"
+            textSize = 10f
+            setTextColor(Color.rgb(138, 141, 150))
         })
 
         val tabs = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 12, 0, 10)
+            setPadding(0, dp(10), 0, dp(9))
         }
+
         listOf("Modules", "HUD", "Performance", "Network", "Settings").forEach { tab ->
             tabs.addView(TextView(this).apply {
                 text = tab
@@ -160,61 +200,79 @@ class ClientOverlayService : Service() {
                 gravity = Gravity.CENTER
                 setTextColor(if (tab == activeTab) Color.WHITE else Color.rgb(130, 133, 141))
                 background = backgroundShape(
-                    if (tab == activeTab) Color.rgb(35, 37, 42) else Color.rgb(18, 19, 22), 14
+                    if (tab == activeTab) Color.rgb(36, 38, 44) else Color.rgb(18, 19, 22),
+                    13
                 )
-                setPadding(9, 0, 9, 0)
-                setOnClickListener { activeTab = tab; rebuildPanel() }
-            }, LinearLayout.LayoutParams(0, 38, 1f).apply { marginEnd = 5 })
+                setPadding(dp(10), 0, dp(10), 0)
+                setOnClickListener {
+                    activeTab = tab
+                    rebuildPanel()
+                }
+            }, LinearLayout.LayoutParams(0, dp(36), 1f).apply {
+                marginEnd = dp(5)
+            })
         }
+
         root.addView(tabs)
 
-        val scroll = ScrollView(this)
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+        }
         scroll.addView(buildTabContent())
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         root.addView(Button(this).apply {
-            text = "Hide menu"
+            text = "Close"
             isAllCaps = false
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.LTGRAY)
-            background = backgroundShape(Color.rgb(27, 28, 32), 16)
+            background = backgroundShape(Color.rgb(27, 28, 32), 14)
             setOnClickListener { togglePanel() }
-        }, LinearLayout.LayoutParams(-1, 46).apply { topMargin = 10 })
+        }, LinearLayout.LayoutParams(-1, dp(42)).apply {
+            topMargin = dp(9)
+        })
 
-        menuWidth = dp(350)
-        menuHeight = dp(590)
         return root
     }
 
     private fun buildTabContent(): View {
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 2, 0, 4)
+            setPadding(0, dp(2), 0, dp(4))
         }
+
         when (activeTab) {
             "Modules" -> {
-                addSection(list, "MODULES", "Tap a module to enable or disable it.")
-                ModuleRegistry.all.forEach { addModuleRow(list, it) }
+                addSection(list, "ALL MODULES", "Core-registered helpers. Game integration is wired progressively.")
+                addModuleGrid(list, ModuleRegistry.all)
             }
             "HUD" -> {
-                addSection(list, "HUD & VISUALS", "Clean, movable client-side information.")
-                ModuleRegistry.all.filter { it.category == "HUD" || it.category == "Visual" }.forEach { addModuleRow(list, it) }
+                addSection(list, "HUD & VISUALS", "Information and presentation helpers.")
+                addModuleGrid(
+                    list,
+                    ModuleRegistry.all.filter {
+                        it.category == "HUD" ||
+                            it.category == "Visual" ||
+                            it.id in listOf("fps", "cps", "coordinates", "keystrokes", "clock", "compass", "item_info")
+                    }
+                )
             }
             "Performance" -> {
-                addSection(list, "PERFORMANCE", "Telemetry and smooth-frame tools.")
-                ModuleRegistry.all.filter { it.category == "Performance" }.forEach { addModuleRow(list, it) }
+                addSection(list, "PERFORMANCE", "Telemetry and profile controls. Riplow does not fake renderer optimizations.")
+                addModuleGrid(list, ModuleRegistry.all.filter { it.category == "Performance" })
                 addActionRow(list, "Native telemetry", NativeBridge.nativeDiagnostics())
             }
             "Network" -> {
                 addSection(list, "NETWORK", "Bedrock-aware RakNet/UDP diagnostics.")
-                ModuleRegistry.all.filter { it.category == "Network" }.forEach { addModuleRow(list, it) }
+                addModuleGrid(list, ModuleRegistry.all.filter { it.category == "Network" })
                 addActionRow(list, "Current diagnostics", NativeBridge.nativeDiagnostics())
             }
             "Settings" -> {
-                addSection(list, "SETTINGS", "Preferences are stored locally on this device.")
-                addSettingRow(list, "Compact menu", "Use a smaller overlay layout", "compact_menu")
+                addSection(list, "CLIENT SETTINGS", "Preferences persist locally on this device.")
+                addSettingRow(list, "Compact menu", "Reduce the ClickGUI footprint", "compact_menu")
                 addSettingRow(list, "Remember modules", "Keep module state between sessions", "remember_modules")
-                addSettingRow(list, "Reduced motion", "Use shorter UI transitions", "reduced_motion")
+                addSettingRow(list, "Reduced motion", "Shorten UI transitions", "reduced_motion")
                 addActionRow(list, "Reset local settings", "Clear Riplow preferences") {
                     prefs.edit().clear().apply()
                     Toast.makeText(this, "Riplow settings reset", Toast.LENGTH_SHORT).show()
@@ -222,7 +280,30 @@ class ClientOverlayService : Service() {
                 }
             }
         }
+
         return list
+    }
+
+    private fun addModuleGrid(parent: LinearLayout, modules: List<ModuleDefinition>) {
+        modules.chunked(2).forEach { pair ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+
+            pair.forEach { module ->
+                val holder = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                addModuleRow(holder, module)
+                row.addView(holder, LinearLayout.LayoutParams(0, -2, 1f).apply {
+                    if (row.childCount > 0) marginStart = dp(7)
+                })
+            }
+
+            if (pair.size == 1) {
+                row.addView(LinearLayout(this), LinearLayout.LayoutParams(0, dp(72), 1f))
+            }
+
+            parent.addView(row, LinearLayout.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(7)
+            })
+        }
     }
 
     private fun addSection(parent: LinearLayout, title: String, detail: String) {
@@ -230,121 +311,162 @@ class ClientOverlayService : Service() {
             text = title
             textSize = 10f
             setTextColor(Color.rgb(130, 133, 141))
-        }, LinearLayout.LayoutParams(-1, 24))
+        }, LinearLayout.LayoutParams(-1, dp(20)))
+
         parent.addView(TextView(this).apply {
             text = detail
-            textSize = 12f
+            textSize = 11f
             setTextColor(Color.rgb(175, 178, 186))
-            setPadding(0, 0, 0, 10)
+            setPadding(0, 0, 0, dp(8))
         })
     }
 
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
-        val enabled = prefs.getBoolean("module_${module.id}", false)
+        val key = "module_" + module.id
+        val enabled = prefs.getBoolean(key, false)
+        NativeBridge.nativeSetModule(module.id, enabled)
+
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(14, 8, 10, 8)
-            background = backgroundShape(Color.rgb(24, 25, 29), 17)
+            setPadding(dp(12), dp(8), dp(10), dp(8))
+            background = backgroundShape(Color.rgb(24, 25, 29), 16)
+            setOnClickListener {
+                val next = !prefs.getBoolean(key, false)
+                prefs.edit().putBoolean(key, next).apply()
+                NativeBridge.nativeSetModule(module.id, next)
+                rebuildPanel()
+            }
         }
+
         val textBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
         textBox.addView(TextView(this).apply {
             text = module.title
-            textSize = 14f
+            textSize = 13f
             setTextColor(Color.WHITE)
         })
+
         textBox.addView(TextView(this).apply {
             text = module.description
-            textSize = 10f
+            textSize = 9f
             setTextColor(Color.rgb(130, 133, 141))
+            setPadding(0, dp(3), 0, 0)
         })
-        row.addView(textBox, LinearLayout.LayoutParams(0, 58, 1f))
+
+        row.addView(textBox, LinearLayout.LayoutParams(0, dp(52), 1f))
+
         row.addView(TextView(this).apply {
             text = if (enabled) "ON" else "OFF"
-            textSize = 10f
+            textSize = 9f
             gravity = Gravity.CENTER
             setTextColor(if (enabled) Color.BLACK else Color.LTGRAY)
-            background = backgroundShape(if (enabled) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49), 12)
-            setPadding(13, 0, 13, 0)
-        }, LinearLayout.LayoutParams(-2, 34))
-        row.setOnClickListener {
-            val next = NativeBridge.nativeToggleModule(module.id)
-            prefs.edit().putBoolean("module_${module.id}", next).apply()
-            rebuildPanel()
-        }
-        parent.addView(row, LinearLayout.LayoutParams(-1, 68).apply { bottomMargin = 7 })
+            background = backgroundShape(
+                if (enabled) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49),
+                11
+            )
+            setPadding(dp(10), 0, dp(10), 0)
+        }, LinearLayout.LayoutParams(-2, dp(30)))
+
+        parent.addView(row, LinearLayout.LayoutParams(-1, dp(72)))
     }
 
     private fun addSettingRow(parent: LinearLayout, title: String, detail: String, key: String) {
         val value = prefs.getBoolean(key, false)
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(14, 8, 10, 8)
-            background = backgroundShape(Color.rgb(24, 25, 29), 17)
+            setPadding(dp(12), dp(8), dp(10), dp(8))
+            background = backgroundShape(Color.rgb(24, 25, 29), 16)
             setOnClickListener {
                 prefs.edit().putBoolean(key, !value).apply()
                 rebuildPanel()
             }
         }
+
         val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
         texts.addView(TextView(this).apply {
             text = title
-            textSize = 14f
+            textSize = 13f
             setTextColor(Color.WHITE)
         })
+
         texts.addView(TextView(this).apply {
             text = detail
-            textSize = 10f
+            textSize = 9f
             setTextColor(Color.rgb(130, 133, 141))
+            setPadding(0, dp(3), 0, 0)
         })
-        row.addView(texts, LinearLayout.LayoutParams(0, 58, 1f))
+
+        row.addView(texts, LinearLayout.LayoutParams(0, dp(52), 1f))
+
         row.addView(TextView(this).apply {
             text = if (value) "ON" else "OFF"
             gravity = Gravity.CENTER
-            textSize = 10f
+            textSize = 9f
             setTextColor(if (value) Color.BLACK else Color.LTGRAY)
-            background = backgroundShape(if (value) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49), 12)
-            setPadding(13, 0, 13, 0)
-        }, LinearLayout.LayoutParams(-2, 34))
-        parent.addView(row, LinearLayout.LayoutParams(-1, 68).apply { bottomMargin = 7 })
+            background = backgroundShape(
+                if (value) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49),
+                11
+            )
+            setPadding(dp(10), 0, dp(10), 0)
+        }, LinearLayout.LayoutParams(-2, dp(30)))
+
+        parent.addView(row, LinearLayout.LayoutParams(-1, dp(72)).apply {
+            bottomMargin = dp(7)
+        })
     }
 
-    private fun addActionRow(parent: LinearLayout, title: String, detail: String, action: (() -> Unit)? = null) {
+    private fun addActionRow(
+        parent: LinearLayout,
+        title: String,
+        detail: String,
+        action: (() -> Unit)? = null
+    ) {
         parent.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(14, 12, 14, 12)
-            background = backgroundShape(Color.rgb(24, 25, 29), 17)
+            setPadding(dp(12), dp(11), dp(12), dp(11))
+            background = backgroundShape(Color.rgb(24, 25, 29), 16)
             if (action != null) setOnClickListener { action() }
+
             addView(TextView(this@ClientOverlayService).apply {
                 text = title
-                textSize = 13f
+                textSize = 12f
                 setTextColor(Color.WHITE)
             })
+
             addView(TextView(this@ClientOverlayService).apply {
                 text = detail
-                textSize = 10f
+                textSize = 9f
                 setTextColor(Color.rgb(130, 133, 141))
-                setPadding(0, 4, 0, 0)
+                setPadding(0, dp(4), 0, 0)
             })
-        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 7 })
+        }, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = dp(7)
+        })
     }
 
     private fun rebuildPanel() {
-        panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
-        panel = buildPanel()
-        windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
+        panel?.let {
+            if (it.isAttachedToWindow) windowManager.removeView(it)
+        }
+        panel = null
+        showPanel()
     }
 
     private fun backgroundShape(color: Int, radius: Int) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radius.toFloat()
-        setStroke(1, Color.rgb(43, 45, 51))
+        setStroke(dp(1), Color.rgb(43, 45, 51))
     }
 
-    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
         panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
-        if (::bubble.isInitialized && bubble.isAttachedToWindow) windowManager.removeView(bubble)
+        if (::bubble.isInitialized && bubble.isAttachedToWindow) {
+            windowManager.removeView(bubble)
+        }
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
@@ -375,7 +497,10 @@ class ClientOverlayService : Service() {
                     return true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (kotlin.math.abs(event.rawX - downX) < 12 && kotlin.math.abs(event.rawY - downY) < 12) view.performClick()
+                    if (kotlin.math.abs(event.rawX - downX) < 12 &&
+                        kotlin.math.abs(event.rawY - downY) < 12) {
+                        view.performClick()
+                    }
                     return true
                 }
             }
