@@ -2,7 +2,16 @@ cmake_minimum_required(VERSION 3.22.1)
 project("riplow_core")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_library(riplow_core SHARED riplow_core.cpp core/module.cpp)
-target_include_directories(riplow_core PRIVATE \${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(riplow_core SHARED
+    riplow_core.cpp
+    core/module.cpp
+    core/performance.cpp
+    core/network.cpp
+)
+
+target_include_directories(riplow_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 find_library(log-lib log)
-target_link_libraries(riplow_core \${log-lib})
+target_link_libraries(riplow_core ${log-lib})
