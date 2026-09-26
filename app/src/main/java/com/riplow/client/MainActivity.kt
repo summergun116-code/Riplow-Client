@@ -320,15 +320,6 @@ class MainActivity : AppCompatActivity() {
                     showPage(Page.MODULES)
                 }
             }, buttonParams())
-        } else {
-            if (availability == ModuleAvailability.GAME_BRIDGE_REQUIRED) {
-                card.addView(TextView(this).apply {
-                    text = "BRIDGE"
-                    textSize = 10f
-                    setTextColor(getColor(R.color.riplow_secondary))
-                    setPadding(0, dp(8), 0, 0)
-                })
-            }
         }
 
         module.settings.forEach { setting ->
