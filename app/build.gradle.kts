@@ -11,13 +11,11 @@ android {
         applicationId = "com.riplow.client"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 5
+        versionName = "1.3"
 
         externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++20"
-            }
+            cmake { cppFlags += "-std=c++20" }
         }
     }
 
@@ -26,18 +24,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures {
-        buildConfig = true
-    }
+    buildFeatures { buildConfig = true }
 
     buildTypes {
-        release {
-            isMinifyEnabled = false
-        }
+        release { isMinifyEnabled = false }
     }
 
     externalNativeBuild {
@@ -48,9 +40,7 @@ android {
     }
 
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     }
 }
 

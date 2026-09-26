@@ -1,34 +1,34 @@
 # Riplow Client
 
-Riplow is a Minecraft Bedrock/MCPE Android client and launcher architecture focused on performance, clean UI, utility features, diagnostics, and maintainable native integration.
+Riplow is a Minecraft Bedrock/MCPE Android companion and launcher. It uses the Minecraft installation already on the device instead of pretending to be a second Minecraft app.
 
-> Performance is the blood of Riplow.
+## Direction
 
-## Goals
+- Clean landscape-first Android UI.
+- Direct launch of the installed Minecraft Bedrock app.
+- 36 Minecraft-focused modules.
+- No Kill Aura, combat automation, auto-mining, auto-clicking, chest stealing, anti-AFK or similar gameplay automation.
+- No persistent in-game overlay service or injected ClickGUI.
+- Bedrock-aware network diagnostics.
+- Explicit compatibility states: working, telemetry-only, bridge-required, or planned.
+- Riplow-side performance profiles that reduce the companion's own overhead without fake renderer claims.
 
-- Mobile-first glass UI with clean spacing and subtle motion.
-- C++20 native core with a thin Android/JNI layer.
-- Modular client architecture with categories, settings, lifecycle, and version requirements.
-- Performance telemetry: FPS, frame time, 1% lows, CPU/GPU/RAM where available, thermals, and network quality.
-- Bedrock-aware version compatibility instead of hard-coded offsets.
-- Legitimate managed profiles/import/launch workflows that respect Android sandboxing and Minecraft platform rules.
-- Network diagnostics built around Bedrock's RakNet/UDP model.
-- Reproducible builds and automated checks.
+## Module groups
 
-## Riplow 1.2
+Performance covers FPS telemetry, frame pacing, performance profiles, memory and battery visibility.
 
-The 1.2 release consolidates Bedrock 1.26.51 compatibility handling, adaptive Riplow-side performance controls, searchable 100-feature module architecture, Lifeboat profile safeguards, RakNet/UDP diagnostics, and overlay/JNI reliability hardening.
+HUD covers session timer, clock, coordinates, compass, FPS, direction, potion, armor and scoreboard presentation.
 
-## Development order
+Visual covers zoom, crosshair, fullbright, fog, view bobbing, FOV, GUI scale and low-fire preferences.
 
-1. Plan and architecture
-2. UI foundation
-3. Native core
-4. Minecraft integration boundary
-5. Modules and HUD
-6. Performance instrumentation
-7. Compatibility
-8. Testing and benchmarking
-9. Release APK
+Network covers ping, diagnostics, jitter, packet loss and connection state.
 
-Riplow uses other Bedrock clients and launchers as engineering references where useful, while keeping its own implementation and UI.
+Minecraft covers pack workspaces, add-ons, world organization, backups, version profiles, quick launch and module configuration.
+
+## Architecture boundary
+
+Riplow launches the real com.mojang.minecraftpe installation. A normal Android app cannot safely pretend it has deep access to Minecraft's renderer or game state. When a module needs a verified Bedrock integration, Riplow marks it as bridge-required instead of exposing a fake working toggle.
+
+## Build
+
+The project uses Kotlin/Android plus a small C++20 core. CI checks that the Kotlin and native module registries stay synchronized.

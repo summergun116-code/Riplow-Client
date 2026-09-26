@@ -12,7 +12,10 @@ object ModuleCapabilities {
         "clock",
         "session_timer",
         "memory_monitor",
-        "battery_guard"
+        "battery_guard",
+        "performance_profile",
+        "quick_launch",
+        "module_config"
     )
 
     fun availability(id: String): ModuleAvailability = when {
@@ -22,8 +25,7 @@ object ModuleCapabilities {
         else -> ModuleAvailability.PLANNED
     }
 
-    fun canToggle(id: String): Boolean =
-        availability(id) == ModuleAvailability.READY
+    fun canToggle(id: String): Boolean = availability(id) == ModuleAvailability.READY
 
     fun label(id: String, enabled: Boolean): String = when (availability(id)) {
         ModuleAvailability.READY -> if (enabled) "ON" else "OFF"
@@ -33,9 +35,9 @@ object ModuleCapabilities {
     }
 
     fun detail(id: String): String = when (availability(id)) {
-        ModuleAvailability.READY -> "Runtime active"
-        ModuleAvailability.NATIVE_TELEMETRY -> "Native diagnostics available"
-        ModuleAvailability.GAME_BRIDGE_REQUIRED -> "Waiting for version-matched Bedrock bridge"
-        ModuleAvailability.PLANNED -> "Implementation not connected yet"
+        ModuleAvailability.READY -> "Runs in the Riplow app"
+        ModuleAvailability.NATIVE_TELEMETRY -> "Read-only Bedrock network telemetry"
+        ModuleAvailability.GAME_BRIDGE_REQUIRED -> "Needs a verified Bedrock integration for the detected version"
+        ModuleAvailability.PLANNED -> "Workspace only until a real Minecraft integration exists"
     }
 }

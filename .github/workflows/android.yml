@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: riplow-android-${{ github.ref }}
+  group: riplow-android-\${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -80,23 +80,12 @@ jobs:
           test -s "$DEBUG_APK"
           test -s "$RELEASE_APK"
 
-          echo "== File sizes =="
-          ls -lh "$DEBUG_APK" "$RELEASE_APK"
-
-          echo "== ZIP integrity: debug =="
-          unzip -t "$DEBUG_APK" >/dev/null
-
-          echo "== APK signature: debug =="
           "$BUILD_TOOLS/apksigner" verify --verbose "$DEBUG_APK"
-
-          echo "== Package metadata: debug =="
           BADGING=$("$BUILD_TOOLS/aapt2" dump badging "$DEBUG_APK")
-          printf '%s\n' "$BADGING" | grep -F "package: name='com.riplow.client'"
-
-          echo "== Native library presence =="
+          printf '%s
+' "$BADGING" | grep -F "package: name='com.riplow.client'"
           unzip -l "$DEBUG_APK" | grep -Eq 'lib/(arm64-v8a|armeabi-v7a|x86_64|x86)/libriplow_core\.so'
-
-          echo "== Release APK ZIP integrity =="
+          unzip -t "$DEBUG_APK" >/dev/null
           unzip -t "$RELEASE_APK" >/dev/null
 
           sha256sum "$DEBUG_APK" "$RELEASE_APK" | tee apk-sha256.txt
@@ -114,11 +103,9 @@ jobs:
       - name: Create versioned GitHub release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: \${{ github.token }}
         shell: bash
         run: |
-          # Multiple main builds may run at once. Only the commit that is
-          # currently at origin/main is allowed to publish a release.
           CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
           if [ "$CURRENT_MAIN" != "$GITHUB_SHA" ]; then
             echo "Skipping release: this run is no longer the current main commit."
@@ -126,9 +113,9 @@ jobs:
           fi
 
           APP_VERSION="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)"
-          RELEASE_TAG="v${APP_VERSION}"
-          RELEASE_APK="Riplow-Client-${RELEASE_TAG}-debug.apk"
-          RELEASE_SHA="Riplow-Client-${RELEASE_TAG}-sha256.txt"
+          RELEASE_TAG="v$APP_VERSION"
+          RELEASE_APK="Riplow-Client-$RELEASE_TAG-debug.apk"
+          RELEASE_SHA="Riplow-Client-$RELEASE_TAG-sha256.txt"
 
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists; leaving it unchanged."
@@ -138,4 +125,4 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "$RELEASE_APK"
           cp apk-sha256.txt "$RELEASE_SHA"
 
-          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: Bedrock 1.26.51 compatibility, adaptive performance runtime, allocation-free native diagnostics, 100-feature master catalog, searchable ClickGUI, Lifeboat compatibility safeguards, RakNet/UDP server diagnostics, launcher/overlay reliability fixes, and expanded regression coverage. Native Bedrock game hooks remain version-gated until explicitly verified."             --latest
+          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: focused Minecraft companion redesign, 36 legitimate modules, external Minecraft launch, no injected overlay service, no gameplay automation, Bedrock-aware diagnostics, and lighter app architecture."             --latest

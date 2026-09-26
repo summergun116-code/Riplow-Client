@@ -12,6 +12,17 @@ class ModuleRegistryTest {
     }
 
     @Test
+    fun registryIsFocusedAndAutomationFree() {
+        assertTrue(ModuleRegistry.all.size <= 40)
+        val ids = ModuleRegistry.all.map { it.id }.toSet()
+        assertTrue("kill_aura" !in ids)
+        assertTrue("auto_mine" !in ids)
+        assertTrue("chest_stealer" !in ids)
+        assertTrue("anti_afk" !in ids)
+        assertTrue("auto_reconnect" !in ids)
+    }
+
+    @Test
     fun everySettingHasValidDefault() {
         ModuleRegistry.all.forEach { module ->
             module.settings.forEach { setting ->
@@ -31,8 +42,7 @@ class ModuleRegistryTest {
     }
 
     @Test
-    fun nativeAndBridgeOverlapIsIntentionalAndKnown() {
-        val overlap = ModuleRegistry.nativeIds intersect ModuleRegistry.gameBridgeIds
-        assertEquals(setOf("ping_counter"), overlap)
+    fun noNativeAndGameBridgeOverlap() {
+        assertEquals(emptySet<String>(), ModuleRegistry.nativeIds intersect ModuleRegistry.gameBridgeIds)
     }
 }

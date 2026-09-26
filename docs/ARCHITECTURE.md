@@ -1,27 +1,50 @@
 # Riplow Architecture
 
-## Principles
+## Product model
 
-### UI is first-class
-The launcher and in-game UI are the primary interaction layer. Touch targets, density, animation cost, accessibility, state persistence, and low-end Android performance are design requirements.
+Riplow is an external Minecraft Bedrock companion and launcher.
 
-### Performance is measurable
-No fake FPS-boost switches. Optimizations must be evaluated with frame time, FPS, 1% lows, memory, CPU/GPU utilization where available, and thermal behavior.
+The app launches the user's installed Minecraft package directly. It does not bundle a fake Minecraft implementation, replace the game, inject a built-in ClickGUI, or keep a persistent overlay service running.
 
-### Compatibility is explicit
-Bedrock versions change. Integration must use capability detection and a compatibility layer rather than one permanent memory layout or offset set.
+## Modules
 
-### Network is Bedrock-aware
-Bedrock multiplayer networking uses RakNet over UDP. Riplow's network layer therefore focuses on latency, jitter, packet-loss diagnostics, connection stability, and safe client-side buffering rather than a TCP model.
+The module registry is deliberately small and Minecraft-focused.
 
-## Initial module categories
+### Performance
+FPS telemetry, frame pacing, performance profile, memory and battery.
 
-- Performance
-- PvP
-- Utility
-- Visual
-- HUD
-- Network
-- Client
+### HUD
+Session timer, clock, coordinates, compass, FPS, direction, potion, armor and scoreboard presentation.
 
-PvP features are limited to legitimate HUD, performance, accessibility, and diagnostics utilities; no gameplay automation or unfair-advantage systems.
+### Visual
+Zoom, crosshair, fullbright, fog, view bobbing, FOV, GUI scale and low-fire preferences.
+
+### Network
+Ping, jitter, packet loss, connection state and read-only Bedrock diagnostics.
+
+### Minecraft
+Pack profiles, add-on workspace, world organization, manual backups, version profiles, quick launch and configuration.
+
+There are no combat modules or gameplay automation modules.
+
+## Compatibility boundary
+
+Riplow separates:
+- app-side modules that can actually run in Android;
+- native telemetry modules;
+- Minecraft game modules that require a verified Bedrock bridge;
+- planned Minecraft workspaces.
+
+Unknown/new Minecraft versions do not silently receive unverified game hooks.
+
+## Performance
+
+The performance profile controls Riplow's own sampling and UI overhead. It does not claim to rewrite Mojang's renderer from an ordinary Android app sandbox.
+
+## Network
+
+Bedrock-aware diagnostics use the RakNet/UDP model and remain read-only. Riplow does not spoof or suppress server traffic.
+
+## CI invariant
+
+The Kotlin module registry and native C++ registry must contain the same number of definitions. Every capability set must reference a registered module.
