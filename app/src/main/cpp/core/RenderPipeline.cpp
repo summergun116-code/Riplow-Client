@@ -182,6 +182,8 @@ void RenderPipeline::on_swap() {
     g_state.frames.fetch_add(1, std::memory_order_relaxed);
     g_state.last_frame_ns.store(now_ns, std::memory_order_release);
 
+    if (!g_state.hud_enabled.load(std::memory_order_acquire)) return;
+
     TouchEvent event{};
     std::size_t processed = 0;
     while (processed < kMaxEventsPerFrame && g_state.events.pop(event)) {
