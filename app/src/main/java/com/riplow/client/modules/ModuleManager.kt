@@ -14,18 +14,33 @@ import org.json.JSONObject
 object ModuleManager {
     private const val ENABLED_PREFIX = "module_enabled_"
     private const val SETTING_PREFIX = "module_setting_"
+    private val transientState = mutableMapOf<String, Boolean>()
+
+    private fun remembers(prefs: SharedPreferences): Boolean =
+        prefs.getBoolean("remember_modules", true)
 
     fun isEnabled(prefs: SharedPreferences, id: String): Boolean =
-        prefs.getBoolean(ENABLED_PREFIX + id, false)
+        if (remembers(prefs)) {
+            prefs.getBoolean(ENABLED_PREFIX + id, false)
+        } else {
+            transientState[id] ?: false
+        }
 
     fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
-        val accepted = try {
+        transientState[id] = enabled
+        val editor = prefs.edit()
+        if (remembers(prefs)) {
+            editor.putBoolean(ENABLED_PREFIX + id, enabled)
+        } else {
+            editor.remove(ENABLED_PREFIX + id)
+        }
+        editor.apply()
+
+        return try {
             NativeBridge.nativeSetModule(id, enabled)
         } catch (_: Throwable) {
             false
         }
-        prefs.edit().putBoolean(ENABLED_PREFIX + id, enabled).apply()
-        return accepted
     }
 
     fun toggle(prefs: SharedPreferences, id: String): Boolean {
@@ -75,6 +90,7 @@ object ModuleManager {
     }
 
     fun reset(prefs: SharedPreferences) {
+        transientState.clear()
         val editor = prefs.edit()
         ModuleRegistry.all.forEach { module ->
             editor.remove(ENABLED_PREFIX + module.id)
