@@ -127,11 +127,15 @@ class ClientOverlayService : Service() {
             setOnClickListener { togglePanel() }
             setOnTouchListener(DragTouchListener())
         }
-        windowManager.addView(bubble, overlayParams(dp(54), dp(54)).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = dp(18)
-            y = dp(76)
-        })
+        try {
+            windowManager.addView(bubble, overlayParams(dp(54), dp(54)).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = dp(18)
+                y = dp(76)
+            })
+        } catch (_: Throwable) {
+            stopSelf()
+        }
     }
 
     private fun showPanel(animateOpen: Boolean = true) {
@@ -140,7 +144,13 @@ class ClientOverlayService : Service() {
         runtimeHost.sync(prefs)
         calculateMenuSize()
         panel = buildPanel()
-        windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
+        try {
+            windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
+        } catch (_: Throwable) {
+            panel = null
+            Toast.makeText(this, "Riplow overlay could not be opened", Toast.LENGTH_SHORT).show()
+            return
+        }
         if (animateOpen) {
             panel?.alpha = 0f
             panel?.scaleX = 0.97f
@@ -580,10 +590,15 @@ class ClientOverlayService : Service() {
 
     private fun rebuildPanel() {
         panel?.let {
-            if (it.isAttachedToWindow) windowManager.removeView(it)
+            try {
+                if (it.isAttachedToWindow) windowManager.removeView(it)
+            } catch (_: Throwable) {
+            }
         }
         panel = null
-        showPanel(animateOpen = false)
+        if (android.provider.Settings.canDrawOverlays(this)) {
+            showPanel(animateOpen = false)
+        }
     }
 
     private fun backgroundShape(color: Int, radius: Int) = GradientDrawable().apply {
