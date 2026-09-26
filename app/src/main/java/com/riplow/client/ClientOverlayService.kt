@@ -19,10 +19,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.text.InputType
 import android.widget.Toast
+import com.riplow.client.modules.BedrockServerProbe
+import com.riplow.client.modules.BedrockVersionParser
+import com.riplow.client.modules.MinecraftCompatibility
 import com.riplow.client.modules.ModuleAvailability
 import com.riplow.client.modules.ModuleCapabilities
 import com.riplow.client.modules.ModuleDefinition
@@ -101,12 +106,16 @@ class ClientOverlayService : Service() {
         }
     }
 
-    private fun overlayParams(width: Int, height: Int): WindowManager.LayoutParams =
+    private fun overlayParams(
+        width: Int,
+        height: Int,
+        focusable: Boolean = false
+    ): WindowManager.LayoutParams =
         WindowManager.LayoutParams(
             width,
             height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
@@ -160,7 +169,7 @@ class ClientOverlayService : Service() {
         calculateMenuSize()
         panel = buildPanel()
         try {
-            windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
+            windowManager.addView(panel, overlayParams(menuWidth, menuHeight, focusable = true))
         } catch (_: Throwable) {
             panel = null
             Toast.makeText(this, "Riplow overlay could not be opened", Toast.LENGTH_SHORT).show()
@@ -310,8 +319,9 @@ class ClientOverlayService : Service() {
                 addActionRow(list, "Native telemetry", NativeBridge.nativeDiagnostics())
             }
             "Network" -> {
-                addSection(list, "NETWORK", "Bedrock-aware RakNet/UDP diagnostics.")
+                addSection(list, "NETWORK", "Bedrock-aware RakNet/UDP diagnostics with a read-only server probe.")
                 addModuleGrid(list, ModuleRegistry.all.filter { it.category == "Network" })
+                addServerProbe(list)
                 addActionRow(list, "Current diagnostics", NativeBridge.nativeDiagnostics())
             }
             "Settings" -> {
@@ -595,6 +605,87 @@ class ClientOverlayService : Service() {
         })
     }
 
+    private fun addServerProbe(parent: LinearLayout) {
+        val host = EditText(this).apply {
+            hint = "Server address"
+            setHintTextColor(Color.rgb(110, 113, 120))
+            setTextColor(Color.WHITE)
+            textSize = 11f
+            singleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT
+            background = backgroundShape(Color.rgb(24, 25, 29), 12)
+            setPadding(dp(10), 0, dp(10), 0)
+            setText(prefs.getString("server_probe_host", "") ?: "")
+        }
+        val port = EditText(this).apply {
+            hint = BedrockServerProbe.DEFAULT_PORT.toString()
+            setHintTextColor(Color.rgb(110, 113, 120))
+            setTextColor(Color.WHITE)
+            textSize = 11f
+            singleLine = true
+            inputType = InputType.TYPE_CLASS_NUMBER
+            background = backgroundShape(Color.rgb(24, 25, 29), 12)
+            setPadding(dp(10), 0, dp(10), 0)
+            setText(prefs.getString("server_probe_port", BedrockServerProbe.DEFAULT_PORT.toString()))
+        }
+        val result = TextView(this).apply {
+            text = "No probe yet"
+            textSize = 9f
+            setTextColor(Color.rgb(150, 153, 161))
+            setPadding(dp(2), dp(7), dp(2), 0)
+        }
+        val probeButton = Button(this).apply {
+            text = "Probe"
+            isAllCaps = false
+            textSize = 10f
+            setTextColor(Color.LTGRAY)
+            background = backgroundShape(Color.rgb(37, 39, 45), 12)
+        }
+        val inputs = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        inputs.addView(host, LinearLayout.LayoutParams(0, dp(44), 1f))
+        inputs.addView(port, LinearLayout.LayoutParams(dp(96), dp(44)).apply { marginStart = dp(7) })
+        inputs.addView(probeButton, LinearLayout.LayoutParams(dp(84), dp(44)).apply { marginStart = dp(7) })
+        parent.addView(inputs, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(2) })
+        parent.addView(result, LinearLayout.LayoutParams(-1, dp(46)))
+
+        probeButton.setOnClickListener {
+            val hostValue = host.text?.toString()?.trim().orEmpty()
+            val portValue = port.text?.toString()?.toIntOrNull() ?: BedrockServerProbe.DEFAULT_PORT
+            prefs.edit()
+                .putString("server_probe_host", hostValue)
+                .putString("server_probe_port", portValue.toString())
+                .apply()
+            probeButton.isEnabled = false
+            result.text = "Probing RakNet UDP…"
+            Thread {
+                val probe = BedrockServerProbe.probe(hostValue, portValue)
+                runOnUiThread {
+                    probeButton.isEnabled = true
+                    result.text = if (!probe.reachable || probe.info == null) {
+                        "Unavailable • " + (probe.error ?: "No response")
+                    } else {
+                        val info = probe.info
+                        val clientVersion = BedrockVersionParser.parse(
+                            MinecraftCompatibility.detect(this).versionName
+                        )
+                        val serverVersion = BedrockVersionParser.parse(info.versionName)
+                        val versionNote = when {
+                            clientVersion == null || serverVersion == null -> "version unknown"
+                            clientVersion == serverVersion -> "version matches installed client"
+                            clientVersion.major == serverVersion.major && clientVersion.minor == serverVersion.minor ->
+                                "patch/build differs"
+                            else -> "version mismatch"
+                        }
+                        info.motd + " • " + (info.players ?: 0) + "/" + (info.maxPlayers ?: 0) +
+                            " • protocol " + (info.protocol?.toString() ?: "?") +
+                            " • " + versionNote + " • " + probe.elapsedMs + " ms"
+                    }
+                }
+            }.start()
+        }
+    }
     private fun addActionRow(
         parent: LinearLayout,
         title: String,
