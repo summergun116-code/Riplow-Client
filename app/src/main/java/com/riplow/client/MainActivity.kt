@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.core_version).text =
             getString(R.string.version_format, NativeBridge.version())
+        findViewById<TextView>(R.id.version_chip).text =
+            "Riplow " + BuildConfig.VERSION_NAME
 
         findViewById<TextView>(R.id.module_count).text =
             ModuleRegistry.all.size.toString() + " registered modules"
@@ -54,8 +56,10 @@ class MainActivity : AppCompatActivity() {
         refreshDiagnostics()
 
         launchButton.setOnClickListener { launchMinecraft() }
-        findViewById<Button>(R.id.client_button).setOnClickListener { enableClientMenu() }
+        findViewById<Button>(R.id.client_button).setOnClickListener { enableClientMenu("Modules") }
         findViewById<Button>(R.id.diagnostics_button).setOnClickListener { refreshDiagnostics() }
+
+        bindWorkspaceClicks()
     }
 
     override fun onResume() {
@@ -92,7 +96,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         findViewById<TextView>(R.id.diagnostics).text =
-            "Minecraft: " + (if (install.installed) "installed" else "not visible / installed") +
+            "Minecraft: " + (if (install.installed) "installed" else "not detected") +
                 "\nVersion: " + install.versionName +
                 "\nVersion code: " + install.versionCode +
                 "\nOverlay permission: " + (if (Settings.canDrawOverlays(this)) "granted" else "required") +
@@ -102,7 +106,26 @@ class MainActivity : AppCompatActivity() {
                 "\n\n" + NativeBridge.nativeDiagnostics()
     }
 
-    private fun enableClientMenu() {
+    private fun bindWorkspaceClicks() {
+        mapOf(
+            R.id.nav_home to null,
+            R.id.nav_minecraft to "Modules",
+            R.id.nav_mods to "Modules",
+            R.id.nav_packs to "Modules",
+            R.id.nav_performance to "Performance",
+            R.id.nav_network to "Network",
+            R.id.nav_hud to "HUD",
+            R.id.nav_profiles to "Settings",
+            R.id.nav_settings to "Settings"
+        ).forEach { (id, tab) ->
+            findViewById<TextView>(id).setOnClickListener {
+                if (tab == null) return@setOnClickListener
+                enableClientMenu(tab)
+            }
+        }
+    }
+
+    private fun enableClientMenu(tab: String = "Modules") {
         if (!Settings.canDrawOverlays(this)) {
             prefs.edit().putBoolean("open_after_overlay_permission", true).apply()
             startActivity(
