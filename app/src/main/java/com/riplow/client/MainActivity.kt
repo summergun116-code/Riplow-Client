@@ -1,6 +1,9 @@
 package com.riplow.client
 
+import android.app.ActivityManager
 import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -23,8 +26,6 @@ import com.riplow.client.modules.ModuleRegistry
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-    companion object { private const val MINECRAFT_PACKAGE = "com.mojang.minecraftpe" }
-
     private enum class Page { HOME, MODULES, PACKS, PERFORMANCE, NETWORK, SETTINGS }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -39,6 +40,21 @@ class MainActivity : AppCompatActivity() {
     private var launchRequested = false
     private var launchOverlay: View? = null
     private var loadingDetail: TextView? = null
+    private var telemetryView: TextView? = null
+    private val telemetryHandler = Handler(Looper.getMainLooper())
+    private val telemetryRunnable = object : Runnable {
+        override fun run() {
+            val view = telemetryView ?: return
+            view.text = runtimeTelemetry()
+            telemetryHandler.postDelayed(this, 1000L)
+        }
+    }
+
+    companion object {
+        private const val MINECRAFT_PACKAGE = "com.mojang.minecraftpe"
+        private const val REQUEST_EXPORT_PROFILE = 4101
+        private const val REQUEST_IMPORT_PROFILE = 4102
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +94,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPage(page: Page) {
+        telemetryHandler.removeCallbacks(telemetryRunnable)
+        telemetryView = null
         pageTitle.text = when (page) {
             Page.HOME -> "Home"
             Page.MODULES -> "Modules"
@@ -236,6 +254,13 @@ class MainActivity : AppCompatActivity() {
         }
         pageContainer.addView(card)
 
+        val telemetry = card()
+        addEyebrow(telemetry, "LIVE TELEMETRY")
+        addTitle(telemetry, null, "Device runtime")
+        telemetryView = addBody(telemetry, null, runtimeTelemetry())
+        pageContainer.addView(telemetry)
+        telemetryHandler.post(telemetryRunnable)
+
         addWorkspace("WHAT IT DOES", "Local overhead control",
             "Controls refresh cadence, diagnostics sampling and UI animation cost inside Riplow.",
             "Working", "Riplow-side")
@@ -359,6 +384,28 @@ class MainActivity : AppCompatActivity() {
         }
         card.addView(reducedMotion)
 
+        card.addView(Button(this).apply {
+            text = "Export Profile"
+            isAllCaps = false
+            setOnClickListener { exportProfile() }
+        }, buttonParams())
+
+        card.addView(Button(this).apply {
+            text = "Import Profile"
+            isAllCaps = false
+            setOnClickListener { importProfile() }
+        }, buttonParams())
+
+        card.addView(Button(this).apply {
+            text = "Reset Riplow State"
+            isAllCaps = false
+            setOnClickListener {
+                ModuleManager.reset(prefs)
+                status.text = "Riplow state reset"
+                showPage(Page.SETTINGS)
+            }
+        }, buttonParams())
+
         pageContainer.addView(card)
         addWorkspace("CLIENT MODEL", "External launcher",
             "Riplow is not a second Minecraft implementation and does not bundle a fake in-game world. It opens the installed Minecraft package directly.",
@@ -407,6 +454,85 @@ class MainActivity : AppCompatActivity() {
         }
 
         return card
+    }
+
+    private fun runtimeTelemetry(): String {
+        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val memoryInfo = ActivityManager.MemoryInfo()
+        activityManager.getMemoryInfo(memoryInfo)
+
+        val runtime = Runtime.getRuntime()
+        val usedAppMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L)
+        val maxAppMb = runtime.maxMemory() / (1024L * 1024L)
+        val availableSystemMb = memoryInfo.availMem / (1024L * 1024L)
+        val totalSystemMb = memoryInfo.totalMem / (1024L * 1024L)
+
+        val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
+        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val charging = batteryManager.isCharging
+
+        val uptimeSeconds = android.os.SystemClock.elapsedRealtime() / 1000L
+        val hours = uptimeSeconds / 3600L
+        val minutes = (uptimeSeconds % 3600L) / 60L
+        val seconds = uptimeSeconds % 60L
+
+        return buildString {
+            append("Riplow session: %02d:%02d:%02d".format(hours, minutes, seconds))
+            append("\nApp memory: " + usedAppMb + " MB / " + maxAppMb + " MB")
+            append("\nSystem memory available: " + availableSystemMb + " MB / " + totalSystemMb + " MB")
+            append("\nBattery: " + (if (battery >= 0) battery.toString() + "%" else "unknown"))
+            if (charging) append(" • charging")
+            append("\nMinecraft: ")
+            append(if (MinecraftCompatibility.detect(this@MainActivity).installed) "installed" else "not detected")
+            append("\nNative core: " + if (NativeBridge.isAvailable()) "available" else "unavailable")
+        }
+    }
+
+    private fun exportProfile() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "riplow-profile.json")
+        }
+        startActivityForResult(intent, REQUEST_EXPORT_PROFILE)
+    }
+
+    private fun importProfile() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_PROFILE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+
+        try {
+            when (requestCode) {
+                REQUEST_EXPORT_PROFILE -> {
+                    contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(ModuleManager.exportJson(prefs).toByteArray(Charsets.UTF_8))
+                    } ?: throw IllegalStateException("Could not open destination")
+                    status.text = "Profile exported"
+                }
+                REQUEST_IMPORT_PROFILE -> {
+                    val raw = contentResolver.openInputStream(uri)?.use {
+                        it.readBytes().toString(Charsets.UTF_8)
+                    } ?: throw IllegalStateException("Could not read profile")
+                    status.text = if (ModuleManager.importJson(prefs, raw)) {
+                        "Profile imported"
+                    } else {
+                        "Profile rejected"
+                    }
+                    showPage(Page.SETTINGS)
+                }
+            }
+        } catch (_: Throwable) {
+            status.text = "Profile operation failed"
+        }
     }
 
     private fun addWorkspace(title: String, name: String, body: String, state: String, stateLabel: String) {
@@ -490,6 +616,12 @@ class MainActivity : AppCompatActivity() {
             minecraftState?.text = "Install Minecraft Bedrock to use the launcher."
             status.text = "Minecraft not detected"
         }
+    }
+
+    override fun onDestroy() {
+        telemetryHandler.removeCallbacks(telemetryRunnable)
+        telemetryView = null
+        super.onDestroy()
     }
 
     private fun launchMinecraft() {
