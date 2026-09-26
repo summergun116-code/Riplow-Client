@@ -14,15 +14,19 @@ enum class RiplowPerformanceMode(
 }
 
 object PerformancePolicy {
+    fun modeValue(raw: String?): RiplowPerformanceMode = when (raw) {
+        RiplowPerformanceMode.EXTREME.label -> RiplowPerformanceMode.EXTREME
+        RiplowPerformanceMode.BALANCED.label -> RiplowPerformanceMode.BALANCED
+        else -> RiplowPerformanceMode.PERFORMANCE
+    }
+
     fun mode(prefs: SharedPreferences): RiplowPerformanceMode =
-        when (prefs.getString(
-            "module_setting_fps_boost_profile_mode",
-            RiplowPerformanceMode.PERFORMANCE.label
-        )) {
-            RiplowPerformanceMode.EXTREME.label -> RiplowPerformanceMode.EXTREME
-            RiplowPerformanceMode.BALANCED.label -> RiplowPerformanceMode.BALANCED
-            else -> RiplowPerformanceMode.PERFORMANCE
-        }
+        modeValue(
+            prefs.getString(
+                "module_setting_fps_boost_profile_mode",
+                RiplowPerformanceMode.PERFORMANCE.label
+            )
+        )
 
     fun overlayUpdateMs(prefs: SharedPreferences): Long = mode(prefs).overlayUpdateMs
     fun diagnosticsUpdateMs(prefs: SharedPreferences): Long = mode(prefs).diagnosticsUpdateMs
