@@ -129,21 +129,25 @@ class ClientOverlayService : Service() {
         })
     }
 
-    private fun showPanel() {
+    private fun showPanel(animateOpen: Boolean = true) {
         if (panel != null) return
         ModuleManager.syncNative(prefs)
         calculateMenuSize()
         panel = buildPanel()
-        panel?.alpha = 0f
-        panel?.scaleX = 0.97f
-        panel?.scaleY = 0.97f
         windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
-        panel?.animate()
-            ?.alpha(1f)
-            ?.scaleX(1f)
-            ?.scaleY(1f)
-            ?.setDuration(if (prefs.getBoolean("reduced_motion", false)) 90 else 190)
-            ?.start()
+        if (animateOpen) {
+            panel?.alpha = 0f
+            panel?.scaleX = 0.97f
+            panel?.scaleY = 0.97f
+            panel?.animate()
+                ?.alpha(1f)
+                ?.scaleX(1f)
+                ?.scaleY(1f)
+                ?.setDuration(if (prefs.getBoolean("reduced_motion", false)) 90 else 190)
+                ?.start()
+        } else {
+            panel?.alpha = 1f
+        }
     }
 
     private fun togglePanel() {
@@ -521,7 +525,7 @@ class ClientOverlayService : Service() {
             if (it.isAttachedToWindow) windowManager.removeView(it)
         }
         panel = null
-        showPanel()
+        showPanel(animateOpen = false)
     }
 
     private fun backgroundShape(color: Int, radius: Int) = GradientDrawable().apply {

@@ -69,6 +69,7 @@ object ModuleManager {
     ): String {
         val current = setting(prefs, moduleId, setting)
         val currentIndex = setting.options.indexOf(current).coerceAtLeast(0)
+        if (setting.options.isEmpty()) return current
         val next = setting.options[(currentIndex + 1) % setting.options.size]
         prefs.edit().putString(SETTING_PREFIX + moduleId + "_" + setting.id, next).apply()
         return next
@@ -104,6 +105,9 @@ object ModuleManager {
     fun reset(prefs: SharedPreferences) {
         transientState.clear()
         val editor = prefs.edit()
+            .remove("compact_menu")
+            .remove("remember_modules")
+            .remove("reduced_motion")
         ModuleRegistry.all.forEach { module ->
             editor.remove(ENABLED_PREFIX + module.id)
             module.settings.forEach { setting ->
@@ -147,9 +151,16 @@ object ModuleManager {
                 val item = modules.optJSONObject(module.id) ?: return@forEach
                 if (item.has("enabled")) {
                     if (ModuleRegistry.requiresGameBridge(module.id)) {
+                        transientState[module.id] = false
                         editor.remove(ENABLED_PREFIX + module.id)
                     } else {
-                        editor.putBoolean(ENABLED_PREFIX + module.id, item.optBoolean("enabled"))
+                        val enabled = item.optBoolean("enabled")
+                        transientState[module.id] = enabled
+                        if (remembers(prefs)) {
+                            editor.putBoolean(ENABLED_PREFIX + module.id, enabled)
+                        } else {
+                            editor.remove(ENABLED_PREFIX + module.id)
+                        }
                     }
                 }
                 val settings = item.optJSONObject("settings")
