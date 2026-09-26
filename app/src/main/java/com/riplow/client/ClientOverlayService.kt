@@ -52,6 +52,7 @@ class ClientOverlayService : Service() {
     private var expandedModuleId: String? = null
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var serviceDestroyed = false
     private lateinit var runtimeHost: ModuleOverlayHost
 
     override fun onCreate() {
@@ -665,7 +666,7 @@ class ClientOverlayService : Service() {
             Thread {
                 val probe = BedrockServerProbe.probe(hostValue, portValue)
                 mainHandler.post {
-                    if (isFinishingOrStopping()) return@post
+                    if (serviceDestroyed) return@post
                     probeButton.isEnabled = true
                     result.text = if (!probe.reachable || probe.info == null) {
                         "Unavailable • " + (probe.error ?: "No response")
@@ -732,8 +733,6 @@ class ClientOverlayService : Service() {
         }
     }
 
-    private fun isFinishingOrStopping(): Boolean = isDestroyed || isChangingConfigurations
-
     private fun backgroundShape(color: Int, radius: Int) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radius.toFloat()
@@ -744,6 +743,7 @@ class ClientOverlayService : Service() {
         (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
+        serviceDestroyed = true
         mainHandler.removeCallbacksAndMessages(null)
         runtimeHost.destroy()
         panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
