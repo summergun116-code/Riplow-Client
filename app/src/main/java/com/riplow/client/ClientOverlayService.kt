@@ -32,6 +32,7 @@ import com.riplow.client.modules.BedrockCompatibilityCatalog
 import com.riplow.client.modules.BedrockServerProbe
 import com.riplow.client.modules.BedrockVersionParser
 import com.riplow.client.modules.MinecraftCompatibility
+import com.riplow.client.modules.MasterFeatureCatalog
 import com.riplow.client.modules.ModuleAvailability
 import com.riplow.client.modules.ModuleCapabilities
 import com.riplow.client.modules.ModuleDefinition
@@ -323,7 +324,7 @@ class ClientOverlayService : Service() {
                 val search = EditText(this).apply {
                     hint = "Search modules…"
                     textSize = 11f
-                    singleLine = true
+                    isSingleLine = true
                     inputType = InputType.TYPE_CLASS_TEXT
                     setText(moduleSearchQuery)
                     setTextColor(Color.WHITE)
@@ -667,7 +668,7 @@ class ClientOverlayService : Service() {
             setHintTextColor(Color.rgb(110, 113, 120))
             setTextColor(Color.WHITE)
             textSize = 11f
-            singleLine = true
+            isSingleLine = true
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
             background = backgroundShape(Color.rgb(24, 25, 29), 12)
             setPadding(dp(10), 0, dp(10), 0)
@@ -678,7 +679,7 @@ class ClientOverlayService : Service() {
             setHintTextColor(Color.rgb(110, 113, 120))
             setTextColor(Color.WHITE)
             textSize = 11f
-            singleLine = true
+            isSingleLine = true
             inputType = InputType.TYPE_CLASS_NUMBER
             background = backgroundShape(Color.rgb(24, 25, 29), 12)
             setPadding(dp(10), 0, dp(10), 0)
