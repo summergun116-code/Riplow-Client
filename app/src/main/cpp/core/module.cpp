@@ -106,7 +106,7 @@ std::string ModuleManager::summary() const {
 }
 
 const char* core_version() {
-    return "1.3.0-native";
+    return "1.4.0-native";
 }
 
 ModuleManager& modules() {
