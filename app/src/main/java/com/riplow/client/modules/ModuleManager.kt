@@ -179,6 +179,9 @@ object ModuleManager {
             if (version !in 1..2) return false
             val modules = root.optJSONObject("modules") ?: return false
             val global = root.optJSONObject("settings")
+            val rememberImported = global?.takeIf { it.has("remember_modules") }
+                ?.optBoolean("remember_modules", true)
+            val rememberResult = rememberImported ?: remembers(prefs)
             val editor = prefs.edit()
 
             global?.let {
@@ -186,7 +189,6 @@ object ModuleManager {
                 if (it.has("remember_modules")) editor.putBoolean("remember_modules", it.optBoolean("remember_modules", true))
                 if (it.has("reduced_motion")) editor.putBoolean("reduced_motion", it.optBoolean("reduced_motion"))
             }
-            val editor = prefs.edit()
 
             ModuleRegistry.all.forEach { module ->
                 val item = modules.optJSONObject(module.id) ?: return@forEach
@@ -195,7 +197,7 @@ object ModuleManager {
                     val enabled = item.optBoolean("enabled", false)
                     if (ModuleCapabilities.canToggle(module.id)) {
                         transientState[module.id] = enabled
-                        if (remembers(prefs)) {
+                        if (rememberResult) {
                             editor.putBoolean(ENABLED_PREFIX + module.id, enabled)
                         } else {
                             editor.remove(ENABLED_PREFIX + module.id)
