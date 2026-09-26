@@ -63,8 +63,8 @@ object ModuleManager {
         }
         editor.apply()
 
-        // Runtime-ready Android modules are executed locally by ModuleOverlayHost.
-        // Native telemetry modules are synchronized through JNI only.
+        // Runtime-ready Android modules execute inside Riplow.
+        // Bridge-backed and native modules are synchronized only when their runtime is available.
         if (ModuleRegistry.usesNativeTelemetry(id)) {
             NativeBridge.nativeSetModule(id, enabled)
         }
