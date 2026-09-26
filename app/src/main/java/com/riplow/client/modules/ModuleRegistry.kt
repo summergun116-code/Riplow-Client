@@ -14,15 +14,9 @@ data class ModuleDefinition(
     val settings: List<ModuleSetting> = emptyList()
 )
 
-/**
- * Riplow module catalog.
- *
- * The WClient-compatible surface is registered here so the UI/config system
- * has one authoritative list. Game-side modules stay bridge-gated until a
- * verified Bedrock relay adapter is attached.
- */
 object ModuleRegistry {
     val all = listOf(
+        // Existing Riplow modules
         ModuleDefinition("fps", "FPS Telemetry", "Performance"),
         ModuleDefinition("frame_pacing", "Frame Pacing", "Performance",
             listOf(ModuleSetting("target", "Target", listOf("30 FPS", "60 FPS", "90 FPS", "120 FPS")))),
@@ -73,12 +67,22 @@ object ModuleRegistry {
         ModuleDefinition("quick_launch", "Quick Launch", "Minecraft"),
         ModuleDefinition("module_config", "Module Config", "Minecraft"),
 
-        // WClient-compatible modules currently outside Riplow's verified bridge.
-        ModuleDefinition("hotbar_switcher", "Hotbar Switcher", "Combat"),
+        // WClient module surface, excluding WAura
+        ModuleDefinition("killaura", "Kill Aura", "Combat"),
+        ModuleDefinition("auto_fight", "Auto Fight", "Combat"),
+        ModuleDefinition("infinite_aura", "Infinite Aura", "Combat"),
+        ModuleDefinition("aca", "ACA", "Combat"),
         ModuleDefinition("auto_totem", "Auto Totem", "Combat"),
+        ModuleDefinition("auto_hvh", "Auto HvH", "Combat"),
+        ModuleDefinition("enemy_hunter", "Enemy Hunter", "Combat"),
+        ModuleDefinition("hotbar_switcher", "Hotbar Switcher", "Combat"),
         ModuleDefinition("anti_knockback", "Anti Knockback", "Combat"),
         ModuleDefinition("anti_crystal", "Anti Crystal", "Combat"),
         ModuleDefinition("hit_and_run", "Hit And Run", "Combat"),
+        ModuleDefinition("hitbox", "Hitbox", "Combat"),
+        ModuleDefinition("crystal_smash", "Crystal Smash", "Combat"),
+        ModuleDefinition("trigger_bot", "Trigger Bot", "Combat"),
+
         ModuleDefinition("motion_fly", "Motion Fly", "Motion"),
         ModuleDefinition("player_tp", "Player TP", "Motion"),
         ModuleDefinition("fly", "Fly", "Motion"),
@@ -124,26 +128,31 @@ object ModuleRegistry {
         ModuleDefinition("pie_chart", "Pie Chart", "Misc"),
         ModuleDefinition("fake_death", "Fake Death", "Misc"),
         ModuleDefinition("fake_xp", "Fake XP", "Misc"),
-        ModuleDefinition("miner", "Miner", "Misc")
+        ModuleDefinition("miner", "Miner", "Misc"),
+
+        // Features added in later WClient releases
+        ModuleDefinition("tp_mine", "TPMine", "World"),
+        ModuleDefinition("block_esp", "Block ESP", "Visual"),
+        ModuleDefinition("stash_finder", "Stash Finder", "World"),
+        ModuleDefinition("chest_esp", "Chest ESP", "Visual"),
+        ModuleDefinition("fast_drop", "Fast Drop", "Misc"),
+        ModuleDefinition("sus_chunk_finder", "Sus Chunk Finder", "World"),
+        ModuleDefinition("config_manager", "Config Manager", "Misc"),
+        ModuleDefinition("shulker_preview", "Shulker Preview", "Visual"),
+        ModuleDefinition("old_motion_fly", "Old Motion Fly", "Motion"),
+        ModuleDefinition("lifeboat_mode", "Lifeboat Mode", "Network"),
+        ModuleDefinition("lifeboat_disabler", "Lifeboat Disabler", "Network"),
+        ModuleDefinition("phase", "Phase", "Motion"),
+        ModuleDefinition("ping_spoof", "Ping Spoof", "Network")
     )
 
-    val gameBridgeIds = setOf(
-        "fps", "coordinates", "compass", "fps_overlay", "direction_hud", "potion_hud",
-        "armor_hud", "scoreboard", "zoom", "crosshair", "fullbright", "no_fog",
-        "view_bobbing", "fov_changer", "gui_scale", "low_fire",
-        "hotbar_switcher", "auto_totem", "anti_knockback", "anti_crystal", "hit_and_run",
-        "motion_fly", "player_tp", "fly", "speed", "air_jump", "no_clip", "jet_pack",
-        "high_jump", "bhop", "sprint", "auto_walk", "anti_afk", "spider",
-        "damage_text", "esp", "player_join", "no_hurt_camera", "speed_display",
-        "network_info", "world_state", "minimap", "target_hud", "free_camera",
-        "time_shift", "weather_controller", "effects", "particles", "anti_debuff",
-        "auto_disconnect", "array_list", "toggle_sound", "chest_stealer", "desync",
-        "spammer", "watermark", "position_logger", "no_chat", "command_handler",
-        "replay", "pie_chart", "fake_death", "fake_xp", "miner"
-    )
+    val gameBridgeIds = all
+        .filter { it.category != "Performance" && it.category != "Client" }
+        .mapTo(mutableSetOf()) { it.id }
 
     val nativeIds = setOf(
-        "ping", "network_diagnostics", "jitter_monitor", "packet_loss", "connection_status"
+        "ping", "network_diagnostics", "jitter_monitor", "packet_loss",
+        "connection_status", "lifeboat_mode", "lifeboat_disabler", "ping_spoof"
     )
 
     fun requiresGameBridge(id: String): Boolean = gameBridgeIds.contains(id)
