@@ -11,8 +11,8 @@ android {
         applicationId = "com.riplow.client"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = 6
+        versionName = "1.4"
 
         externalNativeBuild {
             cmake { cppFlags += "-std=c++20" }
