@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         moduleCount = findViewById(R.id.module_count)
 
         findViewById<TextView>(R.id.version_chip).text = "Riplow " + BuildConfig.VERSION_NAME
-        moduleCount.text = ModuleRegistry.all.size.toString() + " focused Minecraft modules"
+        moduleCount.text = ModuleRegistry.all.size.toString() + " Minecraft modules"
 
         bindNavigation()
         showPage(Page.HOME)
@@ -84,9 +84,9 @@ class MainActivity : AppCompatActivity() {
             Page.SETTINGS -> "Settings"
         }
         pageSubtitle.text = when (page) {
-            Page.HOME -> "Your Minecraft stays untouched. Riplow is the launcher and companion."
-            Page.MODULES -> "Legitimate Minecraft-focused modules. No combat automation."
-            Page.PACKS -> "Resource packs, behavior packs, worlds and profiles."
+            Page.HOME -> "Launch Minecraft and manage your client tools from one place."
+            Page.MODULES -> "Minecraft modules and utilities."
+            Page.PACKS -> "Resource packs, add-ons, worlds and profiles."
             Page.PERFORMANCE -> "Device-side tuning for Riplow, with honest Minecraft limits."
             Page.NETWORK -> "Bedrock connection visibility: latency, jitter and session diagnostics."
             Page.SETTINGS -> "Simple local preferences. No background client service."
@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
         featureRow.addView(infoCard(
             "MODULES",
             ModuleRegistry.all.size.toString() + " focused tools",
-            "HUD, visual, performance and network utilities. No combat automation."
+            "HUD, visual, performance, network and gameplay modules."
         ), weightParams(1f))
         featureRow.addView(infoCard(
             "MODE",
@@ -297,8 +297,6 @@ class MainActivity : AppCompatActivity() {
     private fun moduleCard(module: ModuleDefinition): View {
         val card = card()
         addTitle(card, null, module.title)
-        addBody(card, null, module.description)
-
         val availability = ModuleCapabilities.availability(module.id)
         val stateText = when (availability) {
             ModuleAvailability.READY -> if (ModuleManager.isEnabled(prefs, module.id)) "ON" else "OFF"
@@ -323,12 +321,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }, buttonParams())
         } else {
-            card.addView(TextView(this).apply {
-                text = ModuleCapabilities.detail(module.id)
-                textSize = 10f
-                setTextColor(getColor(R.color.riplow_muted))
-            })
+            if (availability == ModuleAvailability.GAME_BRIDGE_REQUIRED) {
+                card.addView(TextView(this).apply {
+                    text = "BRIDGE"
+                    textSize = 10f
+                    setTextColor(getColor(R.color.riplow_secondary))
+                    setPadding(0, dp(8), 0, 0)
+                })
+            }
         }
+
+        module.settings.forEach { setting ->
+            val current = ModuleManager.setting(prefs, module.id, setting)
+            card.addView(Button(this).apply {
+                text = setting.title + ": " + current
+                textAllCaps = false
+                textSize = 11f
+                setOnClickListener {
+                    ModuleManager.cycleSetting(prefs, module.id, setting)
+                    showPage(Page.MODULES)
+                }
+            }, buttonParams())
+        }
+
         return card
     }
 
