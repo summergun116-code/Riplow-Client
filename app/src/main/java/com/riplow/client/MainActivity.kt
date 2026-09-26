@@ -166,7 +166,6 @@ class MainActivity : AppCompatActivity() {
                 "Overlay service failed: " + error.javaClass.simpleName
         }
     }
-    }
 
     private fun launchMinecraft() {
         if (launchRequested) return
