@@ -7,9 +7,9 @@ import org.json.JSONObject
 /**
  * Riplow's persistent module layer.
  *
- * Architecture is intentionally simple: identity/category/settings live in
- * ModuleRegistry, mutable state lives here, and the native module core is
- * synchronised only when state changes or the overlay is opened.
+ * Registry = immutable definitions. Manager = mutable state. Native core is
+ * optional and synchronized only when needed, so a JNI problem cannot take
+ * down the launcher UI.
  */
 object ModuleManager {
     private const val ENABLED_PREFIX = "module_enabled_"
@@ -28,11 +28,27 @@ object ModuleManager {
         }
     }
 
+    fun setRememberModules(prefs: SharedPreferences, remember: Boolean) {
+        val editor = prefs.edit().putBoolean("remember_modules", remember)
+        if (remember) {
+            ModuleRegistry.all.forEach { module ->
+                if (!ModuleRegistry.requiresGameBridge(module.id) && transientState[module.id] == true) {
+                    editor.putBoolean(ENABLED_PREFIX + module.id, true)
+                }
+            }
+        } else {
+            ModuleRegistry.all.forEach { module ->
+                editor.remove(ENABLED_PREFIX + module.id)
+            }
+        }
+        editor.apply()
+    }
+
     fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
         if (ModuleRegistry.requiresGameBridge(id)) {
             transientState[id] = false
             prefs.edit().remove(ENABLED_PREFIX + id).apply()
-            try { NativeBridge.nativeSetModule(id, false) } catch (_: Throwable) {}
+            NativeBridge.nativeSetModule(id, false)
             return false
         }
 
@@ -45,11 +61,7 @@ object ModuleManager {
         }
         editor.apply()
 
-        return try {
-            NativeBridge.nativeSetModule(id, enabled)
-        } catch (_: Throwable) {
-            false
-        }
+        return NativeBridge.nativeSetModule(id, enabled)
     }
 
     fun toggle(prefs: SharedPreferences, id: String): Boolean {
@@ -67,39 +79,33 @@ object ModuleManager {
         moduleId: String,
         setting: ModuleSetting
     ): String {
+        if (setting.options.isEmpty()) return setting.defaultValue
         val current = setting(prefs, moduleId, setting)
-        val currentIndex = setting.options.indexOf(current).coerceAtLeast(0)
-        if (setting.options.isEmpty()) return current
+        val currentIndex = setting.options.indexOf(current).takeIf { it >= 0 } ?: 0
         val next = setting.options[(currentIndex + 1) % setting.options.size]
         prefs.edit().putString(SETTING_PREFIX + moduleId + "_" + setting.id, next).apply()
         return next
     }
 
     fun syncNative(prefs: SharedPreferences) {
+        if (!NativeBridge.isAvailable()) return
         val current = nativeStateMap()
         ModuleRegistry.all.forEach { module ->
             val enabled = isEnabled(prefs, module.id)
             if (current[module.id] == enabled) return@forEach
-            try {
-                NativeBridge.nativeSetModule(module.id, enabled)
-            } catch (_: Throwable) {
-                // UI/state persistence remains usable even when native integration is unavailable.
-            }
+            NativeBridge.nativeSetModule(module.id, enabled)
         }
     }
 
     fun nativeStateMap(): Map<String, Boolean> {
-        return try {
-            NativeBridge.nativeModuleSummary()
-                .lineSequence()
-                .mapNotNull { line ->
-                    val parts = line.split("|")
-                    if (parts.size >= 4) parts[0] to (parts[3] == "ON") else null
-                }
-                .toMap()
-        } catch (_: Throwable) {
-            emptyMap()
-        }
+        val summary = NativeBridge.nativeModuleSummary()
+        if (summary.isBlank()) return emptyMap()
+        return summary.lineSequence()
+            .mapNotNull { line ->
+                val parts = line.split("|", limit = 4)
+                if (parts.size == 4) parts[0] to (parts[3] == "ON") else null
+            }
+            .toMap()
     }
 
     fun reset(prefs: SharedPreferences) {
@@ -115,10 +121,10 @@ object ModuleManager {
             }
         }
         editor.apply()
-        ModuleRegistry.all.forEach { module ->
-            try {
+
+        if (NativeBridge.isAvailable()) {
+            ModuleRegistry.all.forEach { module ->
                 NativeBridge.nativeSetModule(module.id, false)
-            } catch (_: Throwable) {
             }
         }
     }
@@ -163,6 +169,7 @@ object ModuleManager {
                         }
                     }
                 }
+
                 val settings = item.optJSONObject("settings")
                 module.settings.forEach { setting ->
                     if (settings != null && settings.has(setting.id)) {
