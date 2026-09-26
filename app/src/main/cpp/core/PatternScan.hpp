@@ -110,6 +110,7 @@ struct ExecutableSegment {
 };
 
 struct PatternSearchContext {
+    std::string_view module_name;
     std::string_view pattern;
     std::string_view mask;
     uintptr_t result{0};
@@ -147,7 +148,7 @@ inline uintptr_t find_module_pattern(
 
     // dl_iterate_phdr exposes mapped ELF load segments without relying on
     // hard-coded image bases or offsets.
-    PatternSearchContext context{pattern, mask, 0};
+    PatternSearchContext context{module_name, pattern, mask, 0};
     dl_iterate_phdr(scan_executable_segment, &context);
     if (!context.result) {
         __android_log_print(ANDROID_LOG_DEBUG, kLogTag,
