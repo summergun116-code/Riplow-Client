@@ -46,7 +46,12 @@ class ClientOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startOverlayForegroundService()
+        try {
+            startOverlayForegroundService()
+        } catch (_: Throwable) {
+            stopSelf()
+            return
+        }
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         runtimeHost = ModuleOverlayHost(this, windowManager)
         runtimeHost.sync(prefs)
