@@ -28,6 +28,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.text.InputType
 import android.widget.Toast
+import com.riplow.client.modules.BedrockCompatibilityCatalog
 import com.riplow.client.modules.BedrockServerProbe
 import com.riplow.client.modules.BedrockVersionParser
 import com.riplow.client.modules.MinecraftCompatibility
@@ -201,7 +202,12 @@ class ClientOverlayService : Service() {
     private fun togglePanel() {
         if (panel != null) {
             panel?.animate()?.alpha(0f)?.setDuration(if (prefs.getBoolean("reduced_motion", false)) 50 else 120)?.withEndAction {
-                panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
+                panel?.let {
+                    try {
+                        if (it.isAttachedToWindow) windowManager.removeView(it)
+                    } catch (_: Throwable) {
+                    }
+                }
                 panel = null
             }?.start()
         } else {
@@ -620,7 +626,7 @@ class ClientOverlayService : Service() {
             setTextColor(Color.WHITE)
             textSize = 11f
             singleLine = true
-            inputType = InputType.TYPE_CLASS_TEXT
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
             background = backgroundShape(Color.rgb(24, 25, 29), 12)
             setPadding(dp(10), 0, dp(10), 0)
             setText(prefs.getString("server_probe_host", "") ?: "")
@@ -696,6 +702,7 @@ class ClientOverlayService : Service() {
         }
 
         probeButton.setOnClickListener {
+            if (serviceDestroyed) return@setOnClickListener
             val (hostValue, portValue) = readServerTarget()
             prefs.edit()
                 .putString("server_probe_host", hostValue)
@@ -703,31 +710,44 @@ class ClientOverlayService : Service() {
                 .apply()
             probeButton.isEnabled = false
             result.text = "Probing RakNet UDP…"
-            probeExecutor.execute {
-                val probe = BedrockServerProbe.probe(hostValue, portValue)
-                mainHandler.post {
-                    if (serviceDestroyed) return@post
-                    probeButton.isEnabled = true
-                    result.text = if (!probe.reachable || probe.info == null) {
-                        "Unavailable • " + (probe.error ?: "No response")
-                    } else {
-                        val info = probe.info
-                        val clientVersion = BedrockVersionParser.parse(
-                            MinecraftCompatibility.detect(this).versionName
-                        )
-                        val serverVersion = BedrockVersionParser.parse(info.versionName)
-                        val versionNote = when {
-                            clientVersion == null || serverVersion == null -> "version unknown"
-                            clientVersion == serverVersion -> "version matches installed client"
-                            clientVersion.major == serverVersion.major && clientVersion.minor == serverVersion.minor ->
-                                "patch/build differs"
-                            else -> "version mismatch"
+            try {
+                probeExecutor.execute {
+                    val probe = BedrockServerProbe.probe(hostValue, portValue)
+                    mainHandler.post {
+                        if (serviceDestroyed) return@post
+                        probeButton.isEnabled = true
+                        result.text = if (!probe.reachable || probe.info == null) {
+                            "Unavailable • " + (probe.error ?: "No response")
+                        } else {
+                            val info = probe.info
+                            val clientVersion = BedrockVersionParser.parse(
+                                MinecraftCompatibility.detect(this).versionName
+                            )
+                            val serverVersion = BedrockVersionParser.parse(info.versionName)
+                            val versionNote = when {
+                                clientVersion == null || serverVersion == null -> "version unknown"
+                                clientVersion == serverVersion -> "version matches installed client"
+                                clientVersion.major == serverVersion.major && clientVersion.minor == serverVersion.minor ->
+                                    "patch/build differs"
+                                else -> "version mismatch"
+                            }
+                            val expectedProtocol =
+                                BedrockCompatibilityCatalog.expectedNetworkProtocol(clientVersion)
+                            val protocolNote = when {
+                                info.protocol == null -> "protocol unknown"
+                                expectedProtocol == null -> "server protocol " + info.protocol
+                                info.protocol == expectedProtocol -> "protocol " + info.protocol + " ✓"
+                                else -> "protocol mismatch (" + info.protocol + " vs " + expectedProtocol + ")"
+                            }
+                            info.motd + " • " + (info.players ?: 0) + "/" + (info.maxPlayers ?: 0) +
+                                " • " + protocolNote +
+                                " • " + versionNote + " • " + probe.elapsedMs + " ms"
                         }
-                        info.motd + " • " + (info.players ?: 0) + "/" + (info.maxPlayers ?: 0) +
-                            " • protocol " + (info.protocol?.toString() ?: "?") +
-                            " • " + versionNote + " • " + probe.elapsedMs + " ms"
                     }
                 }
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                probeButton.isEnabled = true
+                result.text = "Probe service is stopping"
             }
         }
     }
@@ -787,11 +807,24 @@ class ClientOverlayService : Service() {
         serviceDestroyed = true
         mainHandler.removeCallbacksAndMessages(null)
         probeExecutor.shutdownNow()
-        runtimeHost.destroy()
-        panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
-        if (::bubble.isInitialized && bubble.isAttachedToWindow) {
-            windowManager.removeView(bubble)
+        if (::runtimeHost.isInitialized) {
+            runtimeHost.destroy()
         }
+        if (::windowManager.isInitialized) {
+            panel?.let {
+                try {
+                    if (it.isAttachedToWindow) windowManager.removeView(it)
+                } catch (_: Throwable) {
+                }
+            }
+            if (::bubble.isInitialized) {
+                try {
+                    if (bubble.isAttachedToWindow) windowManager.removeView(bubble)
+                } catch (_: Throwable) {
+                }
+            }
+        }
+        panel = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
@@ -818,7 +851,11 @@ class ClientOverlayService : Service() {
                     val p = view.layoutParams as WindowManager.LayoutParams
                     p.x = startX + (event.rawX - downX).toInt()
                     p.y = startY + (event.rawY - downY).toInt()
-                    windowManager.updateViewLayout(view, p)
+                    try {
+                        windowManager.updateViewLayout(view, p)
+                    } catch (_: Throwable) {
+                        return false
+                    }
                     return true
                 }
                 MotionEvent.ACTION_UP -> {
