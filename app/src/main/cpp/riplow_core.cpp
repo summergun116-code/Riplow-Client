@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <cstdint>
 #include <string>
 
 #include "core/module.hpp"
