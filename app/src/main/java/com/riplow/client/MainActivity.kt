@@ -70,8 +70,12 @@ class MainActivity : AppCompatActivity() {
             hideLaunchScreen()
         }
         if (prefs.getBoolean("open_after_overlay_permission", false) && Settings.canDrawOverlays(this)) {
-            prefs.edit().remove("open_after_overlay_permission").apply()
-            startClientOverlay()
+            val tab = prefs.getString("pending_overlay_tab", "Modules") ?: "Modules"
+            prefs.edit()
+                .remove("open_after_overlay_permission")
+                .remove("pending_overlay_tab")
+                .apply()
+            startClientOverlay(tab)
         }
         refreshDiagnostics()
     }
@@ -127,7 +131,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun enableClientMenu(tab: String = "Modules") {
         if (!Settings.canDrawOverlays(this)) {
-            prefs.edit().putBoolean("open_after_overlay_permission", true).apply()
+            prefs.edit()
+                .putBoolean("open_after_overlay_permission", true)
+                .putString("pending_overlay_tab", tab)
+                .apply()
             startActivity(
                 Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
