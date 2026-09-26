@@ -32,3 +32,10 @@ Riplow launches the real com.mojang.minecraftpe installation. A normal Android a
 ## Build
 
 The project uses Kotlin/Android plus a small C++20 core. CI checks that the Kotlin and native module registries stay synchronized.
+
+
+## Native render foundation
+
+The native layer includes an ARM64-safe pattern scanner, a page-protection guard, a thread-safe render pipeline, and a bounded non-blocking touch event queue.
+
+The normal companion APK keeps the in-process renderer adapter disabled. A verified Bedrock integration build can opt into it with a separately supplied, pinned Dobby tree; the launcher itself does not claim access to another Android process's renderer.
