@@ -42,11 +42,10 @@ class ClientOverlayService : Service() {
         startOverlayForegroundService()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createBubble()
-        showPanel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_OPEN) showPanel()
+        if (intent?.action == ACTION_OPEN || panel == null) showPanel()
         return START_STICKY
     }
 
@@ -84,7 +83,7 @@ class ClientOverlayService : Service() {
             width,
             height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
@@ -94,8 +93,13 @@ class ClientOverlayService : Service() {
 
     private fun calculateMenuSize() {
         val metrics = resources.displayMetrics
-        menuWidth = (metrics.widthPixels * 0.86f).toInt().coerceAtLeast(dp(520))
-        menuHeight = (metrics.heightPixels * 0.82f).toInt().coerceAtLeast(dp(310))
+        val compact = prefs.getBoolean("compact_menu", false)
+        val widthRatio = if (compact) 0.78f else 0.86f
+        val heightRatio = if (compact) 0.74f else 0.82f
+        menuWidth = (metrics.widthPixels * widthRatio).toInt()
+            .coerceAtLeast(dp(if (compact) 420 else 520))
+        menuHeight = (metrics.heightPixels * heightRatio).toInt()
+            .coerceAtLeast(dp(if (compact) 290 else 310))
         menuWidth = menuWidth.coerceAtMost(dp(980))
         menuHeight = menuHeight.coerceAtMost(dp(620))
     }
@@ -131,13 +135,13 @@ class ClientOverlayService : Service() {
             ?.alpha(1f)
             ?.scaleX(1f)
             ?.scaleY(1f)
-            ?.setDuration(180)
+            ?.setDuration(if (prefs.getBoolean("reduced_motion", false)) 90 else 190)
             ?.start()
     }
 
     private fun togglePanel() {
         if (panel != null) {
-            panel?.animate()?.alpha(0f)?.setDuration(110)?.withEndAction {
+            panel?.animate()?.alpha(0f)?.setDuration(if (prefs.getBoolean("reduced_motion", false)) 50 else 120)?.withEndAction {
                 panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
                 panel = null
             }?.start()
@@ -164,7 +168,7 @@ class ClientOverlayService : Service() {
         }, LinearLayout.LayoutParams(0, dp(38), 1f))
 
         header.addView(TextView(this).apply {
-            text = "24 modules"
+            text = "${ModuleRegistry.all.size} modules"
             textSize = 10f
             setTextColor(Color.rgb(185, 188, 196))
             gravity = Gravity.CENTER
@@ -323,7 +327,8 @@ class ClientOverlayService : Service() {
 
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
         val key = "module_" + module.id
-        val enabled = prefs.getBoolean(key, false)
+        val remember = prefs.getBoolean("remember_modules", true)
+        val enabled = if (remember) prefs.getBoolean(key, key == "remember_modules") else false
         NativeBridge.nativeSetModule(module.id, enabled)
 
         val row = LinearLayout(this).apply {
@@ -331,8 +336,8 @@ class ClientOverlayService : Service() {
             setPadding(dp(12), dp(8), dp(10), dp(8))
             background = backgroundShape(Color.rgb(24, 25, 29), 16)
             setOnClickListener {
-                val next = !prefs.getBoolean(key, false)
-                prefs.edit().putBoolean(key, next).apply()
+                val next = !enabled
+                if (remember) prefs.edit().putBoolean(key, next).apply()
                 NativeBridge.nativeSetModule(module.id, next)
                 rebuildPanel()
             }
