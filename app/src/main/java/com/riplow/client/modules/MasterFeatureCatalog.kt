@@ -20,7 +20,7 @@ data class MasterFeature(
     val title: String,
     val category: String,
     val implementation: FeatureImplementation,
-    val risk: FeatureRisk = FeatureRisk.GAME_BRIDGE_REQUIRED,
+    val risk: FeatureRisk = FeatureRisk.CLIENT_SIDE,
     val description: String
 )
 
