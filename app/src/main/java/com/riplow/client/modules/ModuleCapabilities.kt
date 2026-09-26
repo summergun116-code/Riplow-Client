@@ -33,11 +33,4 @@ object ModuleCapabilities {
         ModuleAvailability.GAME_BRIDGE_REQUIRED -> "BRIDGE"
         ModuleAvailability.PLANNED -> "PLANNED"
     }
-
-    fun detail(id: String): String = when (availability(id)) {
-        ModuleAvailability.READY -> "Runs in the Riplow app"
-        ModuleAvailability.NATIVE_TELEMETRY -> "Read-only Bedrock network telemetry"
-        ModuleAvailability.GAME_BRIDGE_REQUIRED -> "Needs a verified Bedrock integration for the detected version"
-        ModuleAvailability.PLANNED -> "Workspace only until a real Minecraft integration exists"
-    }
 }
