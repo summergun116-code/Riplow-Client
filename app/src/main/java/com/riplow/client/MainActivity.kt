@@ -49,11 +49,6 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.version_chip).text = "Riplow " + BuildConfig.VERSION_NAME
         moduleCount.text = ModuleRegistry.all.size.toString() + " focused Minecraft modules"
-        findViewById<Button>(R.id.launch_button).setOnClickListener { launchMinecraft() }
-        findViewById<TextView>(R.id.refresh_button).setOnClickListener {
-            refreshMinecraftState()
-            status.text = "Minecraft status refreshed"
-        }
 
         bindNavigation()
         showPage(Page.HOME)
