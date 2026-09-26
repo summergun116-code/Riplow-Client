@@ -53,12 +53,9 @@ Java_com_riplow_client_NativeBridge_nativeDiagnosticsNative(JNIEnv* env, jobject
         "Modules: " + std::to_string(riplow::modules().enabled_count()) +
         "/" + std::to_string(riplow::modules().size());
     output += "\nProfile: " + riplow::performance().profile_name();
-    output += "
-Frame samples: " + std::to_string(frame.samples);
-    output += "
-Renderer adapter: " + std::string(riplow::render::RenderPipeline::instance().status());
-    output += "
-Network: " + riplow::network().summary();
+    output += "\nFrame samples: " + std::to_string(frame.samples);
+    output += "\nRenderer adapter: " + std::string(riplow::render::RenderPipeline::instance().status());
+    output += "\nNetwork: " + riplow::network().summary();
     return to_jstring(env, output);
 }
 
