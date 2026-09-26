@@ -12,6 +12,7 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -648,18 +649,54 @@ class ClientOverlayService : Service() {
             setTextColor(Color.LTGRAY)
             background = backgroundShape(Color.rgb(37, 39, 45), 12)
         }
+        val joinButton = Button(this).apply {
+            text = "Join"
+            isAllCaps = false
+            textSize = 10f
+            setTextColor(Color.WHITE)
+            background = backgroundShape(Color.rgb(54, 57, 64), 12)
+        }
         val inputs = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
         inputs.addView(host, LinearLayout.LayoutParams(0, dp(44), 1f))
-        inputs.addView(port, LinearLayout.LayoutParams(dp(96), dp(44)).apply { marginStart = dp(7) })
-        inputs.addView(probeButton, LinearLayout.LayoutParams(dp(84), dp(44)).apply { marginStart = dp(7) })
+        inputs.addView(port, LinearLayout.LayoutParams(dp(88), dp(44)).apply { marginStart = dp(7) })
+        inputs.addView(probeButton, LinearLayout.LayoutParams(dp(76), dp(44)).apply { marginStart = dp(7) })
+        inputs.addView(joinButton, LinearLayout.LayoutParams(dp(76), dp(44)).apply { marginStart = dp(7) })
         parent.addView(inputs, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(2) })
         parent.addView(result, LinearLayout.LayoutParams(-1, dp(46)))
 
+        fun readServerTarget(): Pair<String, Int> =
+            host.text?.toString()?.trim().orEmpty() to
+                (port.text?.toString()?.toIntOrNull() ?: BedrockServerProbe.DEFAULT_PORT)
+
+        joinButton.setOnClickListener {
+            val (hostValue, portValue) = readServerTarget()
+            if (hostValue.isBlank() || portValue !in 1..65535) {
+                result.text = "Enter a valid server address and port"
+                return@setOnClickListener
+            }
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("minecraft://connect")
+                    .buildUpon()
+                    .appendQueryParameter("serverUrl", hostValue)
+                    .appendQueryParameter("serverPort", portValue.toString())
+                    .build()
+            ).apply {
+                setPackage("com.mojang.minecraftpe")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            try {
+                startActivity(intent)
+                result.text = "Handed off to Minecraft"
+            } catch (_: Throwable) {
+                result.text = "Minecraft could not open this server link"
+            }
+        }
+
         probeButton.setOnClickListener {
-            val hostValue = host.text?.toString()?.trim().orEmpty()
-            val portValue = port.text?.toString()?.toIntOrNull() ?: BedrockServerProbe.DEFAULT_PORT
+            val (hostValue, portValue) = readServerTarget()
             prefs.edit()
                 .putString("server_probe_host", hostValue)
                 .putString("server_probe_port", portValue.toString())
