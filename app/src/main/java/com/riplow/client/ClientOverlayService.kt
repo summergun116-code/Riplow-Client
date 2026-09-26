@@ -24,6 +24,7 @@ import android.widget.Toast
 import com.riplow.client.modules.ModuleDefinition
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
+import com.riplow.client.modules.ModuleRuntime
 
 class ClientOverlayService : Service() {
     companion object {
@@ -364,7 +365,14 @@ class ClientOverlayService : Service() {
             setPadding(0, dp(3), 0, 0)
         })
 
-        row.addView(textBox, LinearLayout.LayoutParams(0, dp(52), 1f))
+        textBox.addView(TextView(this).apply {
+            text = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
+            textSize = 8f
+            setTextColor(Color.rgb(112, 187, 164))
+            setPadding(0, dp(3), 0, 0)
+        })
+
+        row.addView(textBox, LinearLayout.LayoutParams(0, dp(60), 1f))
 
         if (module.settings.isNotEmpty()) {
             row.addView(TextView(this).apply {
@@ -395,7 +403,7 @@ class ClientOverlayService : Service() {
             setPadding(dp(10), 0, dp(10), 0)
         }, LinearLayout.LayoutParams(-2, dp(30)))
 
-        card.addView(row, LinearLayout.LayoutParams(-1, dp(72)))
+        card.addView(row, LinearLayout.LayoutParams(-1, dp(80)))
 
         if (expandedModuleId == module.id && module.settings.isNotEmpty()) {
             module.settings.forEach { setting ->
