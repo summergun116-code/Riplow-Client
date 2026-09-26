@@ -152,7 +152,7 @@ object ModuleRegistry {
 
     val nativeIds = setOf(
         "ping", "network_diagnostics", "jitter_monitor", "packet_loss",
-        "connection_status", "lifeboat_mode", "lifeboat_disabler", "ping_spoof"
+        "connection_status"
     )
 
     fun requiresGameBridge(id: String): Boolean = gameBridgeIds.contains(id)
