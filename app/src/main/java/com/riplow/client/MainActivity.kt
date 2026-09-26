@@ -1,7 +1,9 @@
 package com.riplow.client
 
 import android.animation.ObjectAnimator
+import android.app.ActivityManager
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageInfo
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -26,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var launchOverlay: FrameLayout
     private lateinit var loadingLogo: TextView
     private lateinit var loadingDetail: TextView
+    private var launchRequested = false
+    private var pulseAnimator: ObjectAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,22 +53,37 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (launchRequested) {
+            launchRequested = false
+            hideLaunchScreen()
+        }
         refreshDiagnostics()
     }
 
-    private fun minecraftInstalled(): Boolean = try {
+    private fun minecraftInfo(): PackageInfo? = try {
         packageManager.getPackageInfo(MINECRAFT_PACKAGE, 0)
-        true
     } catch (_: Exception) {
-        false
+        null
     }
 
+    private fun minecraftInstalled(): Boolean = minecraftInfo() != null
+
     private fun refreshDiagnostics() {
-        val installed = minecraftInstalled()
+        val info = minecraftInfo()
+        val installed = info != null
+        val memory = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val memoryInfo = ActivityManager.MemoryInfo()
+        memory.getMemoryInfo(memoryInfo)
+        val version = info?.versionName ?: "not detected"
+        val overlay = if (Settings.canDrawOverlays(this)) "granted" else "required"
+
         findViewById<TextView>(R.id.status).text =
-            if (installed) "Minecraft detected" else "Minecraft not detected"
+            if (installed) "Minecraft detected  •  $version" else "Minecraft not detected"
         findViewById<TextView>(R.id.diagnostics).text =
-            "Minecraft: " + if (installed) "installed" else "not visible/installed" +
+            "Minecraft: ${if (installed) "installed" else "not visible / installed"}" +
+                "\nVersion: $version" +
+                "\nOverlay permission: $overlay" +
+                "\nAvailable RAM: ${memoryInfo.availMem / (1024L * 1024L)} MB" +
                 "\n\n" + NativeBridge.nativeDiagnostics()
     }
 
@@ -85,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             Intent(this, ClientOverlayService::class.java)
                 .setAction(ClientOverlayService.ACTION_OPEN)
         )
-        findViewById<TextView>(R.id.status).text = "Riplow overlay ready"
+        findViewById<TextView>(R.id.status).text = "Riplow menu opening…"
     }
 
     private fun launchMinecraft() {
@@ -95,14 +114,18 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        launchRequested = true
         showLaunchScreen()
         loadingDetail.text = "Minecraft installation found"
 
         handler.postDelayed({
-            loadingDetail.text = "Preparing Android launch handoff…"
-        }, 260)
+            if (!launchRequested) return@postDelayed
+            loadingDetail.text = "Checking Android launch handoff…"
+        }, 220)
 
         handler.postDelayed({
+            if (!launchRequested) return@postDelayed
+            loadingDetail.text = "Starting Minecraft…"
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     packageManager
@@ -114,13 +137,10 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
 
-                loadingDetail.text = "Launch request handed to Minecraft"
+                loadingDetail.text = "Handoff complete"
                 findViewById<TextView>(R.id.status).text = "Minecraft launch requested"
-
-                handler.postDelayed({
-                    hideLaunchScreen()
-                }, 900)
             } catch (e: Exception) {
+                launchRequested = false
                 loadingDetail.text = "Android could not start Minecraft"
                 findViewById<TextView>(R.id.status).text =
                     "Minecraft launch failed: " + e.javaClass.simpleName
@@ -159,7 +179,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startLoadingPulse() {
-        ObjectAnimator.ofFloat(loadingLogo, View.ALPHA, 0.72f, 1f).apply {
+        pulseAnimator?.cancel()
+        pulseAnimator = ObjectAnimator.ofFloat(loadingLogo, View.ALPHA, 0.74f, 1f).apply {
             duration = 950
             repeatMode = ObjectAnimator.REVERSE
             repeatCount = ObjectAnimator.INFINITE
@@ -168,6 +189,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        launchRequested = false
+        pulseAnimator?.cancel()
+        pulseAnimator = null
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
