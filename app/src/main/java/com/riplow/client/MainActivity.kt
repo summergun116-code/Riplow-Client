@@ -149,9 +149,15 @@ class MainActivity : AppCompatActivity() {
         ), weightParams(1f))
         pageContainer.addView(featureRow, LinearLayout.LayoutParams(-1, -2))
 
+        val core = card()
+        addEyebrow(core, "NATIVE CORE")
+        addTitle(core, null, "Runtime health")
+        addBody(core, null, NativeBridge.loadStatus() + "\nRenderer adapter: " + NativeBridge.renderStatus())
+        pageContainer.addView(core)
+
         val note = card()
         addEyebrow(note, "IMPORTANT")
-        addBody(note, null, "Deep in-game changes require a real, version-matched Bedrock integration. Until one exists, Riplow shows the module as unavailable instead of faking it.")
+        addBody(note, null, "The renderer adapter is shipped as a guarded integration layer. The normal companion APK keeps process hooks disabled, so it cannot destabilize the Minecraft app or pretend it has renderer access it does not actually have.")
         pageContainer.addView(note)
     }
 
