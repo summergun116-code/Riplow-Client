@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loadingLogo: TextView
     private lateinit var loadingDetail: TextView
     private var launchRequested = false
+    private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
     private var pulseAnimator: ObjectAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +57,10 @@ class MainActivity : AppCompatActivity() {
         if (launchRequested) {
             launchRequested = false
             hideLaunchScreen()
+        }
+        if (prefs.getBoolean("open_after_overlay_permission", false) && Settings.canDrawOverlays(this)) {
+            prefs.edit().remove("open_after_overlay_permission").apply()
+            startClientOverlay()
         }
         refreshDiagnostics()
     }
@@ -95,10 +100,15 @@ class MainActivity : AppCompatActivity() {
                     Uri.parse("package:$packageName")
                 )
             )
+            prefs.edit().putBoolean("open_after_overlay_permission", true).apply()
             findViewById<TextView>(R.id.status).text = "Overlay permission required"
             return
         }
 
+        startClientOverlay()
+    }
+
+    private fun startClientOverlay() {
         ContextCompat.startForegroundService(
             this,
             Intent(this, ClientOverlayService::class.java)
