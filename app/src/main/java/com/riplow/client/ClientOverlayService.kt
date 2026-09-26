@@ -4,6 +4,8 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
@@ -317,9 +319,30 @@ class ClientOverlayService : Service() {
                 addSettingRow(list, "Compact menu", "Reduce the ClickGUI footprint", "compact_menu")
                 addSettingRow(list, "Remember modules", "Keep module state between sessions", "remember_modules")
                 addSettingRow(list, "Reduced motion", "Shorten UI transitions", "reduced_motion")
-                addActionRow(list, "Module config", "JSON format stores enabled state and module settings.") {
+                addActionRow(list, "Copy module config", "Copy enabled modules, settings and client preferences as JSON.") {
                     val json = ModuleManager.exportJson(prefs)
-                    Toast.makeText(this, "Module config ready (${json.length} chars)", Toast.LENGTH_SHORT).show()
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Riplow module config", json))
+                    Toast.makeText(this, "Module config copied", Toast.LENGTH_SHORT).show()
+                }
+                addActionRow(list, "Import module config", "Import a Riplow JSON configuration from the clipboard.") {
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    val raw = clipboard.primaryClip
+                        ?.takeIf { it.itemCount > 0 }
+                        ?.getItemAt(0)
+                        ?.coerceToText(this)
+                        ?.toString()
+                        ?: ""
+                    if (raw.isBlank()) {
+                        Toast.makeText(this, "Clipboard has no configuration", Toast.LENGTH_SHORT).show()
+                    } else if (ModuleManager.importJson(prefs, raw)) {
+                        runtimeHost.sync(prefs)
+                        expandedModuleId = null
+                        Toast.makeText(this, "Module config imported", Toast.LENGTH_SHORT).show()
+                        rebuildPanel()
+                    } else {
+                        Toast.makeText(this, "Invalid or unsupported Riplow config", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 addActionRow(list, "Reset local settings", "Clear Riplow preferences") {
                     ModuleManager.reset(prefs)
