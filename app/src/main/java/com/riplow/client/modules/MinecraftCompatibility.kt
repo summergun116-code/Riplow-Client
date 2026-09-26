@@ -24,7 +24,18 @@ object MinecraftCompatibility {
 
     fun bridgeState(context: Context): String {
         val install = detect(context)
-        return if (!install.installed) "Minecraft not detected"
-        else "Bedrock ${install.versionName} • game bridge pending"
+        if (!install.installed) return "Minecraft not detected"
+        val version = BedrockVersionParser.parse(install.versionName)
+            ?: return "Bedrock " + install.versionName + " • version could not be parsed"
+        val info = BedrockBridgeRegistry.inspect(version)
+        return when (info.state) {
+            BedrockBridgeState.NOT_DETECTED -> "Minecraft not detected"
+            BedrockBridgeState.VERSION_PARSED_NO_ADAPTER ->
+                "Bedrock " + version + " • no version adapter"
+            BedrockBridgeState.ADAPTER_READY ->
+                "Bedrock " + version + " • adapter " + info.adapterId + " ready"
+            BedrockBridgeState.ATTACHED ->
+                "Bedrock " + version + " • bridge attached"
+        }
     }
 }
