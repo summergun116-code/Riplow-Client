@@ -63,6 +63,7 @@
                     android:layout_height="40dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_home"
                     android:text="HOME"
                     android:textColor="@color/riplow_foreground"
                     android:textSize="12sp"
@@ -74,6 +75,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_minecraft"
                     android:text="MINECRAFT"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -83,6 +85,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_mods"
                     android:text="MODS / ADD-ONS"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -92,6 +95,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_packs"
                     android:text="PACKS"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -101,6 +105,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_performance"
                     android:text="PERFORMANCE"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -110,6 +115,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_network"
                     android:text="NETWORK"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -119,6 +125,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_hud"
                     android:text="HUD / CLIENT"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -128,6 +135,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_profiles"
                     android:text="PROFILES"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
@@ -137,6 +145,7 @@
                     android:layout_height="38dp"
                     android:gravity="center_vertical"
                     android:paddingLeft="12dp"
+                    android:id="@+id/nav_settings"
                     android:text="SETTINGS"
                     android:textColor="@color/riplow_secondary"
                     android:textSize="12sp"/>
