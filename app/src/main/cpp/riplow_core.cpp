@@ -1,8 +1,10 @@
 #include <jni.h>
 #include <string>
+
 #include "core/module.hpp"
 #include "core/network.hpp"
 #include "core/performance.hpp"
+#include "core/RenderPipeline.hpp"
 
 namespace {
 jstring to_jstring(JNIEnv* env, const std::string& value) {
@@ -49,9 +51,47 @@ Java_com_riplow_client_NativeBridge_nativeDiagnosticsNative(JNIEnv* env, jobject
     std::string output =
         "Modules: " + std::to_string(riplow::modules().enabled_count()) +
         "/" + std::to_string(riplow::modules().size());
-    output += "\nProfile: " + riplow::performance().profile_name();
-    output += "\nFrame samples: " + std::to_string(frame.samples);
-    output += "\nNative: healthy";
-    output += "\nNetwork: " + riplow::network().summary();
+    output += "
+Profile: " + riplow::performance().profile_name();
+    output += "
+Frame samples: " + std::to_string(frame.samples);
+    output += "
+Renderer adapter: " + std::string(riplow::render::RenderPipeline::instance().status());
+    output += "
+Network: " + riplow::network().summary();
     return to_jstring(env, output);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_riplow_client_NativeBridge_nativeRenderStatusNative(JNIEnv* env, jobject) {
+    return env->NewStringUTF(riplow::render::RenderPipeline::instance().status());
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_riplow_client_NativeBridge_nativeStartRenderPipelineNative(JNIEnv*, jobject) {
+    return riplow::render::RenderPipeline::instance().start() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_riplow_client_NativeBridge_nativeStopRenderPipelineNative(JNIEnv*, jobject) {
+    riplow::render::RenderPipeline::instance().stop();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_riplow_client_NativeBridge_nativeSetRenderHudEnabledNative(JNIEnv*, jobject, jboolean enabled) {
+    riplow::render::RenderPipeline::instance().set_hud_enabled(enabled == JNI_TRUE);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_riplow_client_NativeBridge_nativePushTouchNative(
+    JNIEnv*, jobject, jint action, jfloat x, jfloat y, jfloat pressure
+) {
+    return riplow::render::RenderPipeline::instance().push_touch(
+        riplow::render::TouchEvent{
+            static_cast<std::int32_t>(action),
+            x,
+            y,
+            pressure
+        }
+    ) ? JNI_TRUE : JNI_FALSE;
 }
