@@ -140,4 +140,25 @@ object ModuleRegistry {
         ModuleDefinition("script_center", "Script Center", "Future home for sandboxed Riplow scripts.", "Client"),
         ModuleDefinition("replay_preview", "Replay Preview", "Replay preview workspace for future recorder integration.", "Client")
     )
+
+    val gameBridgeIds = setOf(
+        "fps", "cps", "keystrokes", "coordinates", "compass", "item_info",
+        "zoom", "crosshair", "hud", "fps_overlay", "ping_counter", "speed_display",
+        "potion_hud", "armor_hud", "boss_bar", "scoreboard", "tablist", "debug_panel",
+        "direction_hud", "break_indicator", "combo_display", "timer", "tnt_timer",
+        "fullbright", "no_fog", "fog_color", "view_model", "block_outline",
+        "light_overlay", "hit_particles", "better_nametags", "third_person_nametag",
+        "chunk_borders", "motion_blur", "view_bobbing", "fov_changer", "gui_scale",
+        "low_fire", "shulker_preview", "connected_glass", "minimap", "waypoints",
+        "breadcrumbs", "loot_beams", "replay_preview", "auto_reconnect", "anti_afk",
+        "chat_timestamps", "better_chat", "drop_prevention"
+    )
+
+    val nativeIds = setOf(
+        "ping", "network_diagnostics", "jitter_monitor", "connection_status",
+        "packet_loss", "transport_inspector", "session_transport", "ping_counter"
+    )
+
+    fun requiresGameBridge(id: String): Boolean = gameBridgeIds.contains(id)
+    fun usesNativeTelemetry(id: String): Boolean = nativeIds.contains(id)
 }
