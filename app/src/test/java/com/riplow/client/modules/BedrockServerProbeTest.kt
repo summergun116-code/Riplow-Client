@@ -9,7 +9,7 @@ import java.nio.ByteOrder
 class BedrockServerProbeTest {
     @Test
     fun parsesRakNetPong() {
-        val text = "MCPE;Test Bedrock;800;1.21.100;2;20;123;Survival;1;19132;19133"
+        val text = "MCPE;Test Bedrock;2193;1.26.51;2;20;123;Survival;1;19132;19133"
         val magic = byteArrayOf(
             0x00, 0xff.toByte(), 0xff.toByte(), 0x00,
             0xfe.toByte(), 0xfe.toByte(), 0xfe.toByte(), 0xfe.toByte(),
@@ -31,8 +31,8 @@ class BedrockServerProbeTest {
         val parsed = BedrockServerProbe.parsePong(payload, "127.0.0.1", 19132)
         assertNotNull(parsed)
         assertEquals("Test Bedrock", parsed?.motd)
-        assertEquals(800, parsed?.protocol)
-        assertEquals("1.21.100", parsed?.versionName)
+        assertEquals(2193, parsed?.protocol)
+        assertEquals("1.26.51", parsed?.versionName)
         assertEquals(2, parsed?.players)
         assertEquals(20, parsed?.maxPlayers)
     }
