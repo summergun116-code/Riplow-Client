@@ -12,14 +12,14 @@ class ModuleRegistryTest {
     }
 
     @Test
-    fun registryIsFocusedAndAutomationFree() {
-        assertTrue(ModuleRegistry.all.size <= 40)
+    fun registryContainsExpandedWClientSurfaceAndExcludesWAura() {
         val ids = ModuleRegistry.all.map { it.id }.toSet()
-        assertTrue("kill_aura" !in ids)
-        assertTrue("auto_mine" !in ids)
-        assertTrue("chest_stealer" !in ids)
-        assertTrue("anti_afk" !in ids)
-        assertTrue("auto_reconnect" !in ids)
+        assertTrue("killaura" in ids)
+        assertTrue("motion_fly" in ids)
+        assertTrue("block_esp" in ids)
+        assertTrue("tp_mine" in ids)
+        assertTrue("config_manager" in ids)
+        assertTrue("waura" !in ids)
     }
 
     @Test
