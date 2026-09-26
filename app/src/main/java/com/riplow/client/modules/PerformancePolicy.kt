@@ -14,18 +14,15 @@ enum class RiplowPerformanceMode(
 }
 
 object PerformancePolicy {
-    private const val KEY_MODE = "riplow_performance_mode"
-
     fun mode(prefs: SharedPreferences): RiplowPerformanceMode =
-        when (prefs.getString(KEY_MODE, RiplowPerformanceMode.PERFORMANCE.name)) {
-            RiplowPerformanceMode.EXTREME.name -> RiplowPerformanceMode.EXTREME
-            RiplowPerformanceMode.BALANCED.name -> RiplowPerformanceMode.BALANCED
+        when (prefs.getString(
+            "module_setting_fps_boost_profile_mode",
+            RiplowPerformanceMode.PERFORMANCE.label
+        )) {
+            RiplowPerformanceMode.EXTREME.label -> RiplowPerformanceMode.EXTREME
+            RiplowPerformanceMode.BALANCED.label -> RiplowPerformanceMode.BALANCED
             else -> RiplowPerformanceMode.PERFORMANCE
         }
-
-    fun setMode(prefs: SharedPreferences, mode: RiplowPerformanceMode) {
-        prefs.edit().putString(KEY_MODE, mode.name).apply()
-    }
 
     fun overlayUpdateMs(prefs: SharedPreferences): Long = mode(prefs).overlayUpdateMs
     fun diagnosticsUpdateMs(prefs: SharedPreferences): Long = mode(prefs).diagnosticsUpdateMs
