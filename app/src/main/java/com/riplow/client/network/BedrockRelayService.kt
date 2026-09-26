@@ -160,9 +160,9 @@ class BedrockRelayService : Service() {
                         udp.receive(packet)
                     } catch (_: SocketTimeoutException) {
                         continue
-                    } catch (_: SocketException) {
+                    } catch (e: SocketException) {
                         if (stopRequested.get()) break
-                        throw
+                        throw e
                     }
 
                     if (packet.address.isLoopbackAddress) {
