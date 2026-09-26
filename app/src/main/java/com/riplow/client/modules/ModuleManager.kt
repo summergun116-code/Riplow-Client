@@ -146,6 +146,11 @@ object ModuleManager {
     fun exportJson(prefs: SharedPreferences): String {
         val root = JSONObject()
         root.put("version", 2)
+        root.put("settings", JSONObject().apply {
+            put("compact_menu", prefs.getBoolean("compact_menu", false))
+            put("remember_modules", prefs.getBoolean("remember_modules", true))
+            put("reduced_motion", prefs.getBoolean("reduced_motion", false))
+        })
 
         val modules = JSONObject()
         ModuleRegistry.all.forEach { module ->
@@ -167,9 +172,20 @@ object ModuleManager {
     }
 
     fun importJson(prefs: SharedPreferences, raw: String): Boolean {
+        if (raw.length > 256 * 1024) return false
         return try {
             val root = JSONObject(raw)
+            val version = root.optInt("version", 0)
+            if (version !in 1..2) return false
             val modules = root.optJSONObject("modules") ?: return false
+            val global = root.optJSONObject("settings")
+            val editor = prefs.edit()
+
+            global?.let {
+                if (it.has("compact_menu")) editor.putBoolean("compact_menu", it.optBoolean("compact_menu"))
+                if (it.has("remember_modules")) editor.putBoolean("remember_modules", it.optBoolean("remember_modules", true))
+                if (it.has("reduced_motion")) editor.putBoolean("reduced_motion", it.optBoolean("reduced_motion"))
+            }
             val editor = prefs.edit()
 
             ModuleRegistry.all.forEach { module ->
