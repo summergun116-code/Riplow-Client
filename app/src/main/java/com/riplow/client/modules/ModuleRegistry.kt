@@ -130,6 +130,18 @@ object ModuleRegistry {
         ModuleDefinition("fake_xp", "Fake XP", "Misc"),
         ModuleDefinition("miner", "Miner", "Misc"),
 
+        // Additional documented WClient features
+        ModuleDefinition("op_fight_bot", "OPFightBot", "Combat"),
+        ModuleDefinition("auto_armour", "Auto Armour", "Combat"),
+        ModuleDefinition("smooth_zoom", "Smooth Zoom", "Visual"),
+        ModuleDefinition("pop_counter", "Pop Counter", "Visual"),
+        ModuleDefinition("server_manager", "Server Manager", "Minecraft"),
+        ModuleDefinition("game_mode_switcher", "GameMode Switcher", "Minecraft"),
+        ModuleDefinition("random_chat_suffix", "Random Chat Suffix", "Misc"),
+        ModuleDefinition("random_chat_prefix", "Random Chat Prefix", "Misc"),
+        ModuleDefinition("add_server", "Add Server", "Minecraft"),
+        ModuleDefinition("connection_manager", "Connection Manager", "Network"),
+
         // Features added in later WClient releases
         ModuleDefinition("tp_mine", "TPMine", "World"),
         ModuleDefinition("block_esp", "Block ESP", "Visual"),
