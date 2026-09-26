@@ -21,6 +21,8 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import com.riplow.client.modules.ModuleAvailability
+import com.riplow.client.modules.ModuleCapabilities
 import com.riplow.client.modules.ModuleDefinition
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
@@ -39,11 +41,14 @@ class ClientOverlayService : Service() {
     private var activeTab = "Modules"
     private var expandedModuleId: String? = null
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
+    private lateinit var runtimeHost: ModuleOverlayHost
 
     override fun onCreate() {
         super.onCreate()
         startOverlayForegroundService()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        runtimeHost = ModuleOverlayHost(this, windowManager)
+        runtimeHost.sync(prefs)
         createBubble()
     }
 
@@ -132,6 +137,7 @@ class ClientOverlayService : Service() {
     private fun showPanel(animateOpen: Boolean = true) {
         if (panel != null) return
         ModuleManager.syncNative(prefs)
+        runtimeHost.sync(prefs)
         calculateMenuSize()
         panel = buildPanel()
         windowManager.addView(panel, overlayParams(menuWidth, menuHeight))
@@ -294,6 +300,7 @@ class ClientOverlayService : Service() {
                 }
                 addActionRow(list, "Reset local settings", "Clear Riplow preferences") {
                     ModuleManager.reset(prefs)
+                    runtimeHost.sync(prefs)
                     expandedModuleId = null
                     Toast.makeText(this, "Riplow settings and modules reset", Toast.LENGTH_SHORT).show()
                     rebuildPanel()
@@ -342,7 +349,8 @@ class ClientOverlayService : Service() {
     }
 
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
-        val locked = ModuleRegistry.requiresGameBridge(module.id)
+        val availability = ModuleCapabilities.availability(module.id)
+        val toggleable = ModuleCapabilities.canToggle(module.id)
         val enabled = ModuleManager.isEnabled(prefs, module.id)
 
         val card = LinearLayout(this).apply {
@@ -353,23 +361,27 @@ class ClientOverlayService : Service() {
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(10), dp(8))
-            if (!locked) {
+
+            if (toggleable) {
                 setOnClickListener {
                     ModuleManager.toggle(prefs, module.id)
+                    runtimeHost.sync(prefs)
                     rebuildPanel()
                 }
             } else {
                 setOnClickListener {
                     Toast.makeText(
                         this@ClientOverlayService,
-                        "Game bridge required for " + module.title,
+                        ModuleCapabilities.detail(module.id),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
         }
 
-        val textBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val textBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
 
         textBox.addView(TextView(this).apply {
             text = module.title
@@ -384,16 +396,21 @@ class ClientOverlayService : Service() {
             setPadding(0, dp(3), 0, 0)
         })
 
-        val status = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
+        val runtimeStatus = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
+        val capabilityDetail = ModuleCapabilities.detail(module.id)
         textBox.addView(TextView(this).apply {
-            text = status
+            text = if (availability == ModuleAvailability.READY) {
+                runtimeStatus
+            } else {
+                capabilityDetail
+            }
             textSize = 8f
             setTextColor(
-                when {
-                    locked -> Color.rgb(214, 166, 92)
-                    status.contains("unavailable", ignoreCase = true) -> Color.rgb(214, 112, 112)
-                    status.contains("Waiting", ignoreCase = true) -> Color.rgb(184, 184, 194)
-                    else -> Color.rgb(112, 187, 164)
+                when (availability) {
+                    ModuleAvailability.READY -> Color.rgb(112, 187, 164)
+                    ModuleAvailability.NATIVE_TELEMETRY -> Color.rgb(175, 178, 186)
+                    ModuleAvailability.GAME_BRIDGE_REQUIRED -> Color.rgb(214, 166, 92)
+                    ModuleAvailability.PLANNED -> Color.rgb(142, 145, 154)
                 }
             )
             setPadding(0, dp(3), 0, 0)
@@ -409,8 +426,10 @@ class ClientOverlayService : Service() {
                 setTextColor(Color.rgb(185, 188, 196))
                 background = backgroundShape(Color.rgb(37, 39, 45), 10)
                 setPadding(dp(8), 0, dp(8), 0)
+                contentDescription = "Configure " + module.title
                 setOnClickListener {
-                    expandedModuleId = if (expandedModuleId == module.id) null else module.id
+                    expandedModuleId =
+                        if (expandedModuleId == module.id) null else module.id
                     rebuildPanel()
                 }
             }, LinearLayout.LayoutParams(-2, dp(30)).apply {
@@ -419,27 +438,30 @@ class ClientOverlayService : Service() {
         }
 
         row.addView(TextView(this).apply {
-            text = when {
-                    locked -> "LOCK"
-                    enabled -> "ON"
-                    else -> "OFF"
-                }
-            textSize = 9f
+            text = ModuleCapabilities.label(module.id, enabled)
+            textSize = 8f
             gravity = Gravity.CENTER
             setTextColor(
-                    if (locked) Color.rgb(10, 10, 12)
-                    else if (enabled) Color.BLACK
-                    else Color.LTGRAY
-                )
-                background = backgroundShape(
-                    when {
-                        locked -> Color.rgb(214, 166, 92)
-                        enabled -> Color.rgb(220, 223, 226)
-                        else -> Color.rgb(42, 44, 49)
-                    },
-                    11
-                )
-            setPadding(dp(10), 0, dp(10), 0)
+                when (availability) {
+                    ModuleAvailability.READY -> {
+                        if (enabled) Color.BLACK else Color.LTGRAY
+                    }
+                    ModuleAvailability.NATIVE_TELEMETRY -> Color.rgb(230, 230, 234)
+                    ModuleAvailability.GAME_BRIDGE_REQUIRED -> Color.rgb(14, 14, 16)
+                    ModuleAvailability.PLANNED -> Color.rgb(190, 192, 199)
+                }
+            )
+            background = backgroundShape(
+                when (availability) {
+                    ModuleAvailability.READY ->
+                        if (enabled) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49)
+                    ModuleAvailability.NATIVE_TELEMETRY -> Color.rgb(57, 59, 66)
+                    ModuleAvailability.GAME_BRIDGE_REQUIRED -> Color.rgb(214, 166, 92)
+                    ModuleAvailability.PLANNED -> Color.rgb(37, 39, 45)
+                },
+                11
+            )
+            setPadding(dp(9), 0, dp(9), 0)
         }, LinearLayout.LayoutParams(-2, dp(30)))
 
         card.addView(row, LinearLayout.LayoutParams(-1, dp(80)))
@@ -574,6 +596,7 @@ class ClientOverlayService : Service() {
         (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
+        runtimeHost.destroy()
         panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
         if (::bubble.isInitialized && bubble.isAttachedToWindow) {
             windowManager.removeView(bubble)
