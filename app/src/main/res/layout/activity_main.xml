@@ -39,7 +39,7 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:paddingTop="24dp"
-                android:text="HOME&#10;&#10;MINECRAFT&#10;&#10;MODS&#10;&#10;ADD-ONS&#10;&#10;PACKS&#10;&#10;PERFORMANCE&#10;&#10;NETWORK&#10;&#10;HUD&#10;&#10;PROFILES&#10;&#10;SETTINGS"
+                android:text="HOME&#10;&#10;MINECRAFT&#10;&#10;MODS / ADD-ONS&#10;&#10;PACKS&#10;&#10;PERFORMANCE&#10;&#10;NETWORK&#10;&#10;HUD&#10;&#10;PROFILES&#10;&#10;SETTINGS"
                 android:textColor="@color/riplow_secondary"
                 android:textSize="13sp"/>
 
@@ -177,7 +177,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:text="24 registered helper modules"
+                            android:text="24 registered helper modules • launcher + HUD + performance + network"
                             android:textColor="@color/riplow_foreground"
                             android:textSize="18sp"
                             android:textStyle="bold"/>
@@ -226,7 +226,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Resource packs • behavior packs • profiles"
+                            android:text="Resource packs • behavior packs • pack profiles\nOne place for Bedrock content management."
                             android:textColor="@color/riplow_foreground"
                             android:textSize="13sp"
                             android:textStyle="bold"/>
@@ -250,7 +250,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Telemetry • frame timing • battery-aware profiles"
+                            android:text="Telemetry • frame timing • battery-aware profiles\nMeasured diagnostics instead of fake FPS claims."
                             android:textColor="@color/riplow_foreground"
                             android:textSize="13sp"
                             android:textStyle="bold"/>
@@ -274,7 +274,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="RakNet/UDP diagnostics • jitter • packet loss"
+                            android:text="RakNet/UDP diagnostics • jitter • packet loss\nBedrock-aware network visibility."
                             android:textColor="@color/riplow_foreground"
                             android:textSize="13sp"
                             android:textStyle="bold"/>
