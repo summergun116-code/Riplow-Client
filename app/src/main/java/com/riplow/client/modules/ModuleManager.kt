@@ -5,11 +5,11 @@ import com.riplow.client.NativeBridge
 import org.json.JSONObject
 
 /**
- * Riplow's persistent module layer.
+ * Persistent module state.
  *
- * Registry = immutable definitions. Manager = mutable state. Native core is
- * optional and synchronized only when needed, so a JNI problem cannot take
- * down the launcher UI.
+ * A module can only be switched on when an implementation exists.
+ * Game-bridge and planned modules remain configuration-only until their
+ * runtime is connected.
  */
 object ModuleManager {
     private const val ENABLED_PREFIX = "module_enabled_"
@@ -20,7 +20,7 @@ object ModuleManager {
         prefs.getBoolean("remember_modules", true)
 
     fun isEnabled(prefs: SharedPreferences, id: String): Boolean {
-        if (ModuleRegistry.requiresGameBridge(id)) return false
+        if (!ModuleCapabilities.canToggle(id)) return false
         return if (remembers(prefs)) {
             prefs.getBoolean(ENABLED_PREFIX + id, false)
         } else {
@@ -31,9 +31,9 @@ object ModuleManager {
     fun setRememberModules(prefs: SharedPreferences, remember: Boolean) {
         val editor = prefs.edit().putBoolean("remember_modules", remember)
         if (remember) {
-            ModuleRegistry.all.forEach { module ->
-                if (!ModuleRegistry.requiresGameBridge(module.id) && transientState[module.id] == true) {
-                    editor.putBoolean(ENABLED_PREFIX + module.id, true)
+            ModuleCapabilities.runtimeReadyIds.forEach { id ->
+                if (transientState[id] == true) {
+                    editor.putBoolean(ENABLED_PREFIX + id, true)
                 }
             }
         } else {
@@ -45,10 +45,12 @@ object ModuleManager {
     }
 
     fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
-        if (ModuleRegistry.requiresGameBridge(id)) {
+        if (!ModuleCapabilities.canToggle(id)) {
             transientState[id] = false
             prefs.edit().remove(ENABLED_PREFIX + id).apply()
-            NativeBridge.nativeSetModule(id, false)
+            if (ModuleRegistry.usesNativeTelemetry(id)) {
+                NativeBridge.nativeSetModule(id, false)
+            }
             return false
         }
 
@@ -61,18 +63,24 @@ object ModuleManager {
         }
         editor.apply()
 
-        return NativeBridge.nativeSetModule(id, enabled)
+        // Runtime-ready Android modules are executed locally by ModuleOverlayHost.
+        // Native telemetry modules are synchronized through JNI only.
+        if (ModuleRegistry.usesNativeTelemetry(id)) {
+            NativeBridge.nativeSetModule(id, enabled)
+        }
+        return enabled
     }
 
     fun toggle(prefs: SharedPreferences, id: String): Boolean {
-        if (ModuleRegistry.requiresGameBridge(id)) return false
-        val next = !isEnabled(prefs, id)
-        return setEnabled(prefs, id, next)
+        if (!ModuleCapabilities.canToggle(id)) return false
+        return setEnabled(prefs, id, !isEnabled(prefs, id))
     }
 
     fun setting(prefs: SharedPreferences, moduleId: String, setting: ModuleSetting): String =
-        prefs.getString(SETTING_PREFIX + moduleId + "_" + setting.id, setting.defaultValue)
-            ?: setting.defaultValue
+        prefs.getString(
+            SETTING_PREFIX + moduleId + "_" + setting.id,
+            setting.defaultValue
+        ) ?: setting.defaultValue
 
     fun cycleSetting(
         prefs: SharedPreferences,
@@ -90,16 +98,19 @@ object ModuleManager {
     fun syncNative(prefs: SharedPreferences) {
         if (!NativeBridge.isAvailable()) return
         val current = nativeStateMap()
-        ModuleRegistry.all.forEach { module ->
-            val enabled = isEnabled(prefs, module.id)
-            if (current[module.id] == enabled) return@forEach
-            NativeBridge.nativeSetModule(module.id, enabled)
-        }
+        ModuleRegistry.all
+            .filter { ModuleRegistry.usesNativeTelemetry(it.id) }
+            .forEach { module ->
+                val enabled = isEnabled(prefs, module.id)
+                if (current[module.id] == enabled) return@forEach
+                NativeBridge.nativeSetModule(module.id, enabled)
+            }
     }
 
     fun nativeStateMap(): Map<String, Boolean> {
         val summary = NativeBridge.nativeModuleSummary()
         if (summary.isBlank()) return emptyMap()
+
         return summary.lineSequence()
             .mapNotNull { line ->
                 val parts = line.split("|", limit = 4)
@@ -114,6 +125,7 @@ object ModuleManager {
             .remove("compact_menu")
             .remove("remember_modules")
             .remove("reduced_motion")
+
         ModuleRegistry.all.forEach { module ->
             editor.remove(ENABLED_PREFIX + module.id)
             module.settings.forEach { setting ->
@@ -123,26 +135,33 @@ object ModuleManager {
         editor.apply()
 
         if (NativeBridge.isAvailable()) {
-            ModuleRegistry.all.forEach { module ->
-                NativeBridge.nativeSetModule(module.id, false)
-            }
+            ModuleRegistry.all
+                .filter { ModuleRegistry.usesNativeTelemetry(it.id) }
+                .forEach { module ->
+                    NativeBridge.nativeSetModule(module.id, false)
+                }
         }
     }
 
     fun exportJson(prefs: SharedPreferences): String {
         val root = JSONObject()
-        root.put("version", 1)
+        root.put("version", 2)
+
         val modules = JSONObject()
         ModuleRegistry.all.forEach { module ->
             val item = JSONObject()
             item.put("enabled", isEnabled(prefs, module.id))
+            item.put("availability", ModuleCapabilities.availability(module.id).name)
+
             val values = JSONObject()
             module.settings.forEach { setting ->
                 values.put(setting.id, setting(prefs, module.id, setting))
             }
+
             item.put("settings", values)
             modules.put(module.id, item)
         }
+
         root.put("modules", modules)
         return root.toString(2)
     }
@@ -155,18 +174,19 @@ object ModuleManager {
 
             ModuleRegistry.all.forEach { module ->
                 val item = modules.optJSONObject(module.id) ?: return@forEach
+
                 if (item.has("enabled")) {
-                    if (ModuleRegistry.requiresGameBridge(module.id)) {
-                        transientState[module.id] = false
-                        editor.remove(ENABLED_PREFIX + module.id)
-                    } else {
-                        val enabled = item.optBoolean("enabled")
+                    val enabled = item.optBoolean("enabled", false)
+                    if (ModuleCapabilities.canToggle(module.id)) {
                         transientState[module.id] = enabled
                         if (remembers(prefs)) {
                             editor.putBoolean(ENABLED_PREFIX + module.id, enabled)
                         } else {
                             editor.remove(ENABLED_PREFIX + module.id)
                         }
+                    } else {
+                        transientState[module.id] = false
+                        editor.remove(ENABLED_PREFIX + module.id)
                     }
                 }
 
@@ -183,6 +203,7 @@ object ModuleManager {
                     }
                 }
             }
+
             editor.apply()
             syncNative(prefs)
             true
