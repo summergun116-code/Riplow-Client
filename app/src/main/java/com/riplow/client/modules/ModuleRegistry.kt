@@ -3,7 +3,6 @@ package com.riplow.client.modules
 data class ModuleSetting(
     val id: String,
     val title: String,
-    val description: String,
     val options: List<String>,
     val defaultValue: String = options.firstOrNull() ?: ""
 )
@@ -11,74 +10,136 @@ data class ModuleSetting(
 data class ModuleDefinition(
     val id: String,
     val title: String,
-    val description: String,
     val category: String,
     val settings: List<ModuleSetting> = emptyList()
 )
 
 /**
- * Focused Minecraft-only module surface.
+ * Riplow module catalog.
  *
- * Riplow intentionally contains no combat automation, mining automation,
- * inventory stealing, anti-AFK, auto-clicking or other gameplay automation.
+ * The WClient-compatible surface is registered here so the UI/config system
+ * has one authoritative list. Game-side modules stay bridge-gated until a
+ * verified Bedrock relay adapter is attached.
  */
 object ModuleRegistry {
     val all = listOf(
-        ModuleDefinition("fps", "FPS Telemetry", "Frame-rate telemetry when a compatible integration is available.", "Performance"),
-        ModuleDefinition("frame_pacing", "Frame Pacing", "Frame-time visibility and pacing diagnostics.", "Performance",
-            listOf(ModuleSetting("target", "Target", "Preferred observation target.", listOf("30 FPS", "60 FPS", "90 FPS", "120 FPS")))),
-        ModuleDefinition("performance_profile", "Performance Profile", "Controls how aggressively Riplow reduces its own polling, animation and diagnostic overhead.", "Performance",
-            listOf(ModuleSetting("profile", "Profile", "Riplow-side performance profile.", listOf("Balanced", "Performance", "Battery"), "Performance"))),
-        ModuleDefinition("memory_monitor", "Memory Monitor", "Available Android memory readout for the device running Minecraft.", "Performance",
-            listOf(ModuleSetting("interval", "Refresh", "Telemetry refresh cadence.", listOf("1s", "3s", "5s"), "3s"))),
-        ModuleDefinition("battery_guard", "Battery Monitor", "Battery state visibility for long Minecraft sessions.", "Performance"),
+        ModuleDefinition("fps", "FPS Telemetry", "Performance"),
+        ModuleDefinition("frame_pacing", "Frame Pacing", "Performance",
+            listOf(ModuleSetting("target", "Target", listOf("30 FPS", "60 FPS", "90 FPS", "120 FPS")))),
+        ModuleDefinition("performance_profile", "Performance Profile", "Performance",
+            listOf(ModuleSetting("profile", "Profile", listOf("Balanced", "Performance", "Battery"), "Performance"))),
+        ModuleDefinition("memory_monitor", "Memory Monitor", "Performance",
+            listOf(ModuleSetting("interval", "Refresh", listOf("1s", "3s", "5s"), "3s"))),
+        ModuleDefinition("battery_guard", "Battery Monitor", "Performance"),
 
-        ModuleDefinition("session_timer", "Session Timer", "Track the current Riplow/Minecraft launch session.", "HUD",
-            listOf(ModuleSetting("format", "Format", "Timer presentation.", listOf("MM:SS", "HH:MM:SS")))),
-        ModuleDefinition("clock", "Clock", "Local time widget for a Minecraft session.", "HUD",
-            listOf(ModuleSetting("format", "Format", "Local clock format.", listOf("12-hour", "24-hour")))),
-        ModuleDefinition("coordinates", "Coordinates", "Coordinate readout when a real Bedrock bridge is available.", "HUD"),
-        ModuleDefinition("compass", "Compass", "Heading helper when game data is available.", "HUD"),
-        ModuleDefinition("fps_overlay", "FPS Overlay", "Minecraft FPS HUD when game frame data is available.", "HUD"),
-        ModuleDefinition("direction_hud", "Direction HUD", "Compact Minecraft heading display.", "HUD"),
-        ModuleDefinition("potion_hud", "Potion HUD", "Active-effect presentation from Minecraft game data.", "HUD"),
-        ModuleDefinition("armor_hud", "Armor HUD", "Armor/status presentation from Minecraft game data.", "HUD"),
-        ModuleDefinition("scoreboard", "Scoreboard", "Compact scoreboard presentation from Minecraft game data.", "HUD"),
+        ModuleDefinition("session_timer", "Session Timer", "HUD",
+            listOf(ModuleSetting("format", "Format", listOf("MM:SS", "HH:MM:SS")))),
+        ModuleDefinition("clock", "Clock", "HUD",
+            listOf(ModuleSetting("format", "Format", listOf("12-hour", "24-hour")))),
+        ModuleDefinition("coordinates", "Coordinates", "HUD"),
+        ModuleDefinition("compass", "Compass", "HUD"),
+        ModuleDefinition("fps_overlay", "FPS Overlay", "HUD"),
+        ModuleDefinition("direction_hud", "Direction HUD", "HUD"),
+        ModuleDefinition("potion_hud", "Potion HUD", "HUD"),
+        ModuleDefinition("armor_hud", "Armor HUD", "HUD"),
+        ModuleDefinition("scoreboard", "Scoreboard", "HUD"),
 
-        ModuleDefinition("zoom", "Zoom", "Visual accessibility zoom for Minecraft viewing.", "Visual",
-            listOf(ModuleSetting("factor", "Zoom", "Preferred zoom factor.", listOf("2x", "3x", "4x"), "2x"))),
-        ModuleDefinition("crosshair", "Crosshair", "Minecraft visual crosshair preferences.", "Visual",
+        ModuleDefinition("zoom", "Zoom", "Visual",
+            listOf(ModuleSetting("factor", "Zoom", listOf("2x", "3x", "4x"), "2x"))),
+        ModuleDefinition("crosshair", "Crosshair", "Visual",
             listOf(
-                ModuleSetting("style", "Style", "Crosshair shape.", listOf("Cross", "Dot", "Circle", "Plus")),
-                ModuleSetting("size", "Size", "Crosshair scale.", listOf("Small", "Medium", "Large"))
+                ModuleSetting("style", "Style", listOf("Cross", "Dot", "Circle", "Plus")),
+                ModuleSetting("size", "Size", listOf("Small", "Medium", "Large"))
             )),
-        ModuleDefinition("fullbright", "Fullbright", "Visibility helper for dark Minecraft areas.", "Visual"),
-        ModuleDefinition("no_fog", "No Fog", "Reduce or disable distance fog when the Minecraft integration supports it.", "Visual"),
-        ModuleDefinition("view_bobbing", "View Bobbing", "Minecraft camera-bobbing preference.", "Visual"),
-        ModuleDefinition("fov_changer", "FOV Presets", "Convenient Minecraft FOV presets.", "Visual"),
-        ModuleDefinition("gui_scale", "GUI Scale", "Minecraft interface scale preference.", "Visual"),
-        ModuleDefinition("low_fire", "Low Fire", "Reduce first-person fire obstruction.", "Visual"),
+        ModuleDefinition("fullbright", "Fullbright", "Visual"),
+        ModuleDefinition("no_fog", "No Fog", "Visual"),
+        ModuleDefinition("view_bobbing", "View Bobbing", "Visual"),
+        ModuleDefinition("fov_changer", "FOV Presets", "Visual"),
+        ModuleDefinition("gui_scale", "GUI Scale", "Visual"),
+        ModuleDefinition("low_fire", "Low Fire", "Visual"),
 
-        ModuleDefinition("ping", "Ping", "Bedrock server latency telemetry.", "Network"),
-        ModuleDefinition("network_diagnostics", "Network Diagnostics", "Read-only Bedrock latency, jitter and loss diagnostics.", "Network"),
-        ModuleDefinition("jitter_monitor", "Jitter Monitor", "Track short-term latency variation.", "Network"),
-        ModuleDefinition("packet_loss", "Packet Loss", "Display measured or reported packet-loss information.", "Network"),
-        ModuleDefinition("connection_status", "Connection Status", "Summarize the current Minecraft connection state.", "Network"),
+        ModuleDefinition("ping", "Ping", "Network"),
+        ModuleDefinition("network_diagnostics", "Network Diagnostics", "Network"),
+        ModuleDefinition("jitter_monitor", "Jitter Monitor", "Network"),
+        ModuleDefinition("packet_loss", "Packet Loss", "Network"),
+        ModuleDefinition("connection_status", "Connection Status", "Network"),
 
-        ModuleDefinition("pack_switcher", "Pack Switcher", "Minecraft resource/behavior pack workspace.", "Minecraft"),
-        ModuleDefinition("pack_profiles", "Pack Profiles", "Save Minecraft pack profile selections.", "Minecraft"),
-        ModuleDefinition("addon_manager", "Add-on Manager", "Minecraft behavior/resource add-on workspace.", "Minecraft"),
-        ModuleDefinition("world_manager", "World Manager", "Organize Minecraft world profiles.", "Minecraft"),
-        ModuleDefinition("backup_manager", "World Backups", "Manual Minecraft world backup workspace.", "Minecraft"),
-        ModuleDefinition("version_profiles", "Version Profiles", "Associate settings with Minecraft versions.", "Minecraft"),
-        ModuleDefinition("quick_launch", "Quick Launch", "Open the detected Minecraft installation.", "Minecraft"),
-        ModuleDefinition("module_config", "Module Config", "Export/import Riplow's Minecraft module preferences.", "Minecraft")
+        ModuleDefinition("pack_switcher", "Pack Switcher", "Minecraft"),
+        ModuleDefinition("pack_profiles", "Pack Profiles", "Minecraft"),
+        ModuleDefinition("addon_manager", "Add-on Manager", "Minecraft"),
+        ModuleDefinition("world_manager", "World Manager", "Minecraft"),
+        ModuleDefinition("backup_manager", "World Backups", "Minecraft"),
+        ModuleDefinition("version_profiles", "Version Profiles", "Minecraft"),
+        ModuleDefinition("quick_launch", "Quick Launch", "Minecraft"),
+        ModuleDefinition("module_config", "Module Config", "Minecraft"),
+
+        // WClient-compatible modules currently outside Riplow's verified bridge.
+        ModuleDefinition("hotbar_switcher", "Hotbar Switcher", "Combat"),
+        ModuleDefinition("auto_totem", "Auto Totem", "Combat"),
+        ModuleDefinition("anti_knockback", "Anti Knockback", "Combat"),
+        ModuleDefinition("anti_crystal", "Anti Crystal", "Combat"),
+        ModuleDefinition("hit_and_run", "Hit And Run", "Combat"),
+        ModuleDefinition("motion_fly", "Motion Fly", "Motion"),
+        ModuleDefinition("player_tp", "Player TP", "Motion"),
+        ModuleDefinition("fly", "Fly", "Motion"),
+        ModuleDefinition("speed", "Speed", "Motion"),
+        ModuleDefinition("air_jump", "Air Jump", "Motion"),
+        ModuleDefinition("no_clip", "No Clip", "Motion"),
+        ModuleDefinition("jet_pack", "Jet Pack", "Motion"),
+        ModuleDefinition("high_jump", "High Jump", "Motion"),
+        ModuleDefinition("bhop", "Bhop", "Motion"),
+        ModuleDefinition("sprint", "Sprint", "Motion"),
+        ModuleDefinition("auto_walk", "Auto Walk", "Motion"),
+        ModuleDefinition("anti_afk", "Anti AFK", "Motion"),
+        ModuleDefinition("spider", "Spider", "Motion"),
+
+        ModuleDefinition("damage_text", "Damage Text", "Visual"),
+        ModuleDefinition("esp", "ESP", "Visual"),
+        ModuleDefinition("player_join", "Player Join", "Visual"),
+        ModuleDefinition("no_hurt_camera", "No Hurt Camera", "Visual"),
+        ModuleDefinition("speed_display", "Speed Display", "Visual"),
+        ModuleDefinition("network_info", "Network Info", "Visual"),
+        ModuleDefinition("world_state", "World State", "Visual"),
+        ModuleDefinition("minimap", "Minimap", "Visual"),
+        ModuleDefinition("target_hud", "Target HUD", "Visual"),
+
+        ModuleDefinition("free_camera", "Free Camera", "World"),
+        ModuleDefinition("time_shift", "Time Shift", "World"),
+        ModuleDefinition("weather_controller", "Weather Controller", "World"),
+        ModuleDefinition("effects", "Effects", "World"),
+        ModuleDefinition("particles", "Particles", "World"),
+        ModuleDefinition("anti_debuff", "Anti Debuff", "World"),
+
+        ModuleDefinition("auto_disconnect", "Auto Disconnect", "Misc"),
+        ModuleDefinition("array_list", "Array List", "Misc"),
+        ModuleDefinition("toggle_sound", "Toggle Sound", "Misc"),
+        ModuleDefinition("chest_stealer", "Chest Stealer", "Misc"),
+        ModuleDefinition("desync", "Desync", "Misc"),
+        ModuleDefinition("spammer", "Spammer", "Misc"),
+        ModuleDefinition("watermark", "Watermark", "Misc"),
+        ModuleDefinition("position_logger", "Position Logger", "Misc"),
+        ModuleDefinition("no_chat", "No Chat", "Misc"),
+        ModuleDefinition("command_handler", "Command Handler", "Misc"),
+        ModuleDefinition("replay", "Replay", "Misc"),
+        ModuleDefinition("pie_chart", "Pie Chart", "Misc"),
+        ModuleDefinition("fake_death", "Fake Death", "Misc"),
+        ModuleDefinition("fake_xp", "Fake XP", "Misc"),
+        ModuleDefinition("miner", "Miner", "Misc")
     )
 
     val gameBridgeIds = setOf(
         "fps", "coordinates", "compass", "fps_overlay", "direction_hud", "potion_hud",
         "armor_hud", "scoreboard", "zoom", "crosshair", "fullbright", "no_fog",
-        "view_bobbing", "fov_changer", "gui_scale", "low_fire"
+        "view_bobbing", "fov_changer", "gui_scale", "low_fire",
+        "hotbar_switcher", "auto_totem", "anti_knockback", "anti_crystal", "hit_and_run",
+        "motion_fly", "player_tp", "fly", "speed", "air_jump", "no_clip", "jet_pack",
+        "high_jump", "bhop", "sprint", "auto_walk", "anti_afk", "spider",
+        "damage_text", "esp", "player_join", "no_hurt_camera", "speed_display",
+        "network_info", "world_state", "minimap", "target_hud", "free_camera",
+        "time_shift", "weather_controller", "effects", "particles", "anti_debuff",
+        "auto_disconnect", "array_list", "toggle_sound", "chest_stealer", "desync",
+        "spammer", "watermark", "position_logger", "no_chat", "command_handler",
+        "replay", "pie_chart", "fake_death", "fake_xp", "miner"
     )
 
     val nativeIds = setOf(
