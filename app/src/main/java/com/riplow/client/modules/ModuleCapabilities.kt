@@ -15,7 +15,8 @@ object ModuleCapabilities {
         "battery_guard",
         "performance_profile",
         "quick_launch",
-        "module_config"
+        "module_config",
+        "config_manager"
     )
 
     fun availability(id: String): ModuleAvailability = when {
