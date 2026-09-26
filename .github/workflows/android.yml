@@ -48,6 +48,25 @@ jobs:
       - name: Build debug and release
         run: gradle assembleDebug assembleRelease --stacktrace --no-daemon
 
+      - name: Static module consistency checks
+        shell: bash
+        run: |
+          KOTLIN_COUNT=$(grep -o 'ModuleDefinition("' app/src/main/java/com/riplow/client/modules/ModuleRegistry.kt | wc -l)
+          NATIVE_COUNT=$(grep -o '{"[^"]*",' app/src/main/cpp/core/module.cpp | wc -l)
+
+          echo "Kotlin module definitions: $KOTLIN_COUNT"
+          echo "Native module definitions: $NATIVE_COUNT"
+
+          test "$KOTLIN_COUNT" -gt 0
+          test "$KOTLIN_COUNT" -eq "$NATIVE_COUNT"
+
+          grep -F 'gameBridgeIds' app/src/main/java/com/riplow/client/modules/ModuleRegistry.kt
+          grep -F 'Native core unavailable' app/src/main/java/com/riplow/client/NativeBridge.kt
+          grep -F 'limit = 4' app/src/main/java/com/riplow/client/modules/ModuleManager.kt
+
+      - name: Lint debug
+        run: gradle :app:lintDebug --stacktrace --no-daemon
+
       - name: Verify APK outputs
         shell: bash
         run: |
@@ -94,6 +113,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          # Multiple main builds may run at once. Only the commit that is
+          # currently at origin/main is allowed to publish a release.
+          CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [ "$CURRENT_MAIN" != "$GITHUB_SHA" ]; then
+            echo "Skipping release: this run is no longer the current main commit."
+            exit 0
+          fi
+
           APP_VERSION="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)"
           RELEASE_TAG="v${APP_VERSION}"
           RELEASE_APK="Riplow-Client-${RELEASE_TAG}-debug.apk"
@@ -107,9 +134,4 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "$RELEASE_APK"
           cp apk-sha256.txt "$RELEASE_SHA"
 
-          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Riplow Client ${RELEASE_TAG}" \
-            --notes "Riplow ${RELEASE_TAG}: module expansion, persistent settings, launcher hardening, and CI reliability improvements." \
-            --latest
+          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: module hardening, fail-safe JNI, launcher reliability, and CI consistency checks."             --latest
