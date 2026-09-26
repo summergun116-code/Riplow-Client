@@ -8,50 +8,174 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:padding="18dp">
+        android:padding="16dp">
 
         <LinearLayout
-            android:layout_width="190dp"
+            android:layout_width="218dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="16dp"
+            android:padding="18dp"
             android:background="@drawable/bg_surface">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="RIPLOW"
-                android:textColor="@color/riplow_foreground"
-                android:textSize="25sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"/>
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="RIPLOW"
+                    android:textColor="@color/riplow_foreground"
+                    android:textSize="25sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"/>
+
+                <TextView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="R"
+                    android:textColor="@color/riplow_foreground"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_chip"/>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Bedrock companion"
-                android:textColor="@color/riplow_secondary"
-                android:textSize="12sp"/>
+                android:layout_marginTop="5dp"
+                android:text="BEDROCK COMPANION"
+                android:textColor="@color/riplow_muted"
+                android:textSize="10sp"
+                android:letterSpacing="0.06"/>
 
-            <TextView
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="HOME"
+                    android:textColor="@color/riplow_foreground"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_button"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="MINECRAFT"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="MODS / ADD-ONS"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="PACKS"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="PERFORMANCE"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="NETWORK"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="HUD / CLIENT"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="PROFILES"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="12dp"
+                    android:text="SETTINGS"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:paddingTop="24dp"
-                android:text="HOME&#10;&#10;MINECRAFT&#10;&#10;MODS / ADD-ONS&#10;&#10;PACKS&#10;&#10;PERFORMANCE&#10;&#10;NETWORK&#10;&#10;HUD&#10;&#10;PROFILES&#10;&#10;SETTINGS"
-                android:textColor="@color/riplow_secondary"
-                android:textSize="13sp"/>
+                android:gravity="bottom"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/version_chip"
-                android:layout_width="match_parent"
-                android:layout_height="34dp"
-                android:gravity="center"
-                android:background="@drawable/bg_chip"
-                android:text="0.1.1"
-                android:textColor="@color/riplow_secondary"
-                android:textSize="11sp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="LOCAL-FIRST"
+                    android:textColor="@color/riplow_muted"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.08"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="No fake performance claims."
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="10sp"/>
+
+                <TextView
+                    android:id="@+id/version_chip"
+                    android:layout_width="match_parent"
+                    android:layout_height="34dp"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_chip"
+                    android:text="Riplow 0.1.1"
+                    android:textColor="@color/riplow_secondary"
+                    android:textSize="10sp"/>
+            </LinearLayout>
         </LinearLayout>
 
         <ScrollView
@@ -59,7 +183,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="14dp"
-            android:fillViewport="true">
+            android:fillViewport="true"
+            android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -83,14 +208,14 @@
                             android:layout_height="wrap_content"
                             android:text="Your Minecraft companion"
                             android:textColor="@color/riplow_foreground"
-                            android:textSize="27sp"
+                            android:textSize="29sp"
                             android:textStyle="bold"/>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Landscape-first launcher, utilities and client controls."
+                            android:layout_marginTop="5dp"
+                            android:text="Launcher • modules • packs • diagnostics • HUD"
                             android:textColor="@color/riplow_secondary"
                             android:textSize="12sp"/>
                     </LinearLayout>
@@ -98,14 +223,14 @@
                     <TextView
                         android:id="@+id/status"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="42dp"
                         android:gravity="center"
                         android:paddingLeft="14dp"
                         android:paddingRight="14dp"
                         android:background="@drawable/bg_chip"
                         android:text="@string/launcher_status"
                         android:textColor="@color/riplow_foreground"
-                        android:textSize="12sp"/>
+                        android:textSize="11sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -116,7 +241,7 @@
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="180dp"
+                        android:layout_height="196dp"
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:padding="18dp"
@@ -125,26 +250,28 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="MINECRAFT BEDROCK"
+                            android:text="MINECRAFT"
                             android:textColor="@color/riplow_muted"
-                            android:textSize="10sp"/>
+                            android:textSize="10sp"
+                            android:letterSpacing="0.08"/>
 
                         <TextView
                             android:id="@+id/core_version"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:textColor="@color/riplow_secondary"
-                            android:textSize="12sp"/>
+                            android:layout_marginTop="9dp"
+                            android:textColor="@color/riplow_foreground"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
 
                         <TextView
                             android:id="@+id/diagnostics"
                             android:layout_width="match_parent"
                             android:layout_height="0dp"
                             android:layout_weight="1"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="7dp"
                             android:textColor="@color/riplow_secondary"
-                            android:textSize="11sp"/>
+                            android:textSize="10sp"/>
 
                         <Button
                             android:id="@+id/launch_button"
@@ -159,7 +286,7 @@
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="180dp"
+                        android:layout_height="196dp"
                         android:layout_weight="1"
                         android:layout_marginStart="12dp"
                         android:orientation="vertical"
@@ -171,15 +298,16 @@
                             android:layout_height="wrap_content"
                             android:text="RIPLOW SYSTEMS"
                             android:textColor="@color/riplow_muted"
-                            android:textSize="10sp"/>
+                            android:textSize="10sp"
+                            android:letterSpacing="0.08"/>
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="24 registered helper modules • launcher + HUD + performance + network"
+                            android:layout_marginTop="9dp"
+                            android:text="24 registered modules"
                             android:textColor="@color/riplow_foreground"
-                            android:textSize="18sp"
+                            android:textSize="20sp"
                             android:textStyle="bold"/>
 
                         <TextView
@@ -187,31 +315,40 @@
                             android:layout_height="0dp"
                             android:layout_weight="1"
                             android:layout_marginTop="7dp"
-                            android:text="HUD • Performance • Network • Packs • Add-ons • Profiles"
+                            android:text="HUD  •  Performance  •  Network&#10;Packs  •  Add-ons  •  Profiles"
                             android:textColor="@color/riplow_secondary"
-                            android:textSize="12sp"/>
+                            android:textSize="11sp"/>
 
                         <Button
                             android:id="@+id/client_button"
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
                             android:background="@drawable/bg_button"
-                            android:text="Open Client Menu"
+                            android:text="Open Riplow Menu"
                             android:textAllCaps="false"
                             android:textColor="@color/riplow_foreground"
                             android:textSize="13sp"/>
                     </LinearLayout>
                 </LinearLayout>
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="WORKSPACES"
+                    android:textColor="@color/riplow_muted"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.08"/>
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:orientation="horizontal">
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="130dp"
+                        android:layout_height="122dp"
                         android:layout_weight="1"
                         android:padding="16dp"
                         android:orientation="vertical"
@@ -223,18 +360,26 @@
                             android:textColor="@color/riplow_muted"
                             android:textSize="10sp"/>
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Resource packs • behavior packs • pack profiles\nOne place for Bedrock content management."
+                            android:layout_marginTop="7dp"
+                            android:text="Resource packs • behavior packs • profiles"
                             android:textColor="@color/riplow_foreground"
-                            android:textSize="13sp"
+                            android:textSize="12sp"
                             android:textStyle="bold"/>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="bottom"
+                            android:text="Manager architecture is ready for real Bedrock content integration."
+                            android:textColor="@color/riplow_secondary"
+                            android:textSize="10sp"/>
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="130dp"
+                        android:layout_height="122dp"
                         android:layout_weight="1"
                         android:layout_marginStart="12dp"
                         android:padding="16dp"
@@ -247,18 +392,26 @@
                             android:textColor="@color/riplow_muted"
                             android:textSize="10sp"/>
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Telemetry • frame timing • battery-aware profiles\nMeasured diagnostics instead of fake FPS claims."
+                            android:layout_marginTop="7dp"
+                            android:text="Telemetry • frame timing • profiles"
                             android:textColor="@color/riplow_foreground"
-                            android:textSize="13sp"
+                            android:textSize="12sp"
                             android:textStyle="bold"/>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="bottom"
+                            android:text="Measured performance data first; optimization hooks come later."
+                            android:textColor="@color/riplow_secondary"
+                            android:textSize="10sp"/>
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="130dp"
+                        android:layout_height="122dp"
                         android:layout_weight="1"
                         android:layout_marginStart="12dp"
                         android:padding="16dp"
@@ -271,26 +424,49 @@
                             android:textColor="@color/riplow_muted"
                             android:textSize="10sp"/>
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="RakNet/UDP diagnostics • jitter • packet loss\nBedrock-aware network visibility."
+                            android:layout_marginTop="7dp"
+                            android:text="RakNet / UDP • jitter • loss"
                             android:textColor="@color/riplow_foreground"
-                            android:textSize="13sp"
+                            android:textSize="12sp"
                             android:textStyle="bold"/>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="bottom"
+                            android:text="Visibility and diagnostics, without pretending to rewrite the network."
+                            android:textColor="@color/riplow_secondary"
+                            android:textSize="10sp"/>
                     </LinearLayout>
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/diagnostics_button"
-                    android:layout_width="220dp"
-                    android:layout_height="44dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_button"
-                    android:text="Refresh diagnostics"
-                    android:textAllCaps="false"
-                    android:textColor="@color/riplow_secondary"
-                    android:textSize="12sp"/>
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Riplow is still in active development. Some cards describe planned integration rather than completed game hooks."
+                        android:textColor="@color/riplow_muted"
+                        android:textSize="10sp"/>
+
+                    <Button
+                        android:id="@+id/diagnostics_button"
+                        android:layout_width="190dp"
+                        android:layout_height="44dp"
+                        android:layout_marginStart="14dp"
+                        android:background="@drawable/bg_button"
+                        android:text="Refresh diagnostics"
+                        android:textAllCaps="false"
+                        android:textColor="@color/riplow_secondary"
+                        android:textSize="11sp"/>
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
@@ -300,31 +476,33 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        android:background="#E6090A0C">
+        android:background="#EF090A0C">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="420dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:gravity="center"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="34dp">
+            android:padding="28dp"
+            android:background="@drawable/bg_surface">
 
             <TextView
                 android:id="@+id/loading_logo"
-                android:layout_width="86dp"
-                android:layout_height="86dp"
+                android:layout_width="82dp"
+                android:layout_height="82dp"
                 android:gravity="center"
                 android:text="R"
                 android:textColor="@color/riplow_foreground"
-                android:textSize="44sp"
+                android:textSize="43sp"
                 android:textStyle="bold"
-                android:background="@drawable/bg_surface"/>
+                android:background="@drawable/bg_chip"/>
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
+                android:layout_weight="1"
+                android:layout_marginStart="22dp"
                 android:orientation="vertical">
 
                 <TextView
@@ -333,23 +511,23 @@
                     android:layout_height="wrap_content"
                     android:text="Starting Minecraft"
                     android:textColor="@color/riplow_foreground"
-                    android:textSize="24sp"
+                    android:textSize="22sp"
                     android:textStyle="bold"/>
 
                 <TextView
                     android:id="@+id/loading_detail"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="7dp"
                     android:text="Checking installation…"
                     android:textColor="@color/riplow_secondary"
-                    android:textSize="13sp"/>
+                    android:textSize="12sp"/>
 
                 <ProgressBar
                     android:id="@+id/loading_progress"
-                    android:layout_width="220dp"
+                    android:layout_width="match_parent"
                     android:layout_height="3dp"
-                    android:layout_marginTop="22dp"
+                    android:layout_marginTop="18dp"
                     android:indeterminate="true"/>
             </LinearLayout>
         </LinearLayout>
