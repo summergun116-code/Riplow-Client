@@ -342,6 +342,7 @@ class ClientOverlayService : Service() {
     }
 
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
+        val locked = ModuleRegistry.requiresGameBridge(module.id)
         val enabled = ModuleManager.isEnabled(prefs, module.id)
 
         val card = LinearLayout(this).apply {
@@ -352,9 +353,19 @@ class ClientOverlayService : Service() {
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(10), dp(8))
-            setOnClickListener {
-                ModuleManager.toggle(prefs, module.id)
-                rebuildPanel()
+            if (!locked) {
+                setOnClickListener {
+                    ModuleManager.toggle(prefs, module.id)
+                    rebuildPanel()
+                }
+            } else {
+                setOnClickListener {
+                    Toast.makeText(
+                        this@ClientOverlayService,
+                        "Game bridge required for " + module.title,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
 
@@ -376,7 +387,14 @@ class ClientOverlayService : Service() {
         textBox.addView(TextView(this).apply {
             text = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
             textSize = 8f
-            setTextColor(Color.rgb(112, 187, 164))
+            setTextColor(
+                when {
+                    locked -> Color.rgb(214, 166, 92)
+                    status.contains("unavailable", ignoreCase = true) -> Color.rgb(214, 112, 112)
+                    status.contains("Waiting", ignoreCase = true) -> Color.rgb(184, 184, 194)
+                    else -> Color.rgb(112, 187, 164)
+                }
+            )
             setPadding(0, dp(3), 0, 0)
         })
 
@@ -400,14 +418,26 @@ class ClientOverlayService : Service() {
         }
 
         row.addView(TextView(this).apply {
-            text = if (enabled) "ON" else "OFF"
+            text = when {
+                    locked -> "LOCK"
+                    enabled -> "ON"
+                    else -> "OFF"
+                }
             textSize = 9f
             gravity = Gravity.CENTER
-            setTextColor(if (enabled) Color.BLACK else Color.LTGRAY)
-            background = backgroundShape(
-                if (enabled) Color.rgb(220, 223, 226) else Color.rgb(42, 44, 49),
-                11
-            )
+            setTextColor(
+                    if (locked) Color.rgb(10, 10, 12)
+                    else if (enabled) Color.BLACK
+                    else Color.LTGRAY
+                )
+                background = backgroundShape(
+                    when {
+                        locked -> Color.rgb(214, 166, 92)
+                        enabled -> Color.rgb(220, 223, 226)
+                        else -> Color.rgb(42, 44, 49)
+                    },
+                    11
+                )
             setPadding(dp(10), 0, dp(10), 0)
         }, LinearLayout.LayoutParams(-2, dp(30)))
 
@@ -452,7 +482,12 @@ class ClientOverlayService : Service() {
             setPadding(dp(12), dp(8), dp(10), dp(8))
             background = backgroundShape(Color.rgb(24, 25, 29), 16)
             setOnClickListener {
-                prefs.edit().putBoolean(key, !value).apply()
+                val next = !value
+                if (key == "remember_modules") {
+                    ModuleManager.setRememberModules(prefs, next)
+                } else {
+                    prefs.edit().putBoolean(key, next).apply()
+                }
                 rebuildPanel()
             }
         }
