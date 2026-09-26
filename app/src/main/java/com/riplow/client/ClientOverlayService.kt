@@ -36,6 +36,8 @@ import com.riplow.client.modules.ModuleDefinition
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
 import com.riplow.client.modules.ModuleRuntime
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class ClientOverlayService : Service() {
     companion object {
@@ -52,6 +54,7 @@ class ClientOverlayService : Service() {
     private var expandedModuleId: String? = null
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val probeExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var serviceDestroyed = false
     private lateinit var runtimeHost: ModuleOverlayHost
 
@@ -663,7 +666,7 @@ class ClientOverlayService : Service() {
                 .apply()
             probeButton.isEnabled = false
             result.text = "Probing RakNet UDP…"
-            Thread {
+            probeExecutor.execute {
                 val probe = BedrockServerProbe.probe(hostValue, portValue)
                 mainHandler.post {
                     if (serviceDestroyed) return@post
@@ -745,6 +748,7 @@ class ClientOverlayService : Service() {
     override fun onDestroy() {
         serviceDestroyed = true
         mainHandler.removeCallbacksAndMessages(null)
+        probeExecutor.shutdownNow()
         runtimeHost.destroy()
         panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
         if (::bubble.isInitialized && bubble.isAttachedToWindow) {
