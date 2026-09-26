@@ -7,11 +7,14 @@ import android.os.Looper
 import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.riplow.client.modules.MinecraftCompatibility
+import com.riplow.client.network.BedrockRelayService
+import com.riplow.client.network.RelayRuntime
 import com.riplow.client.modules.ModuleAvailability
 import com.riplow.client.modules.ModuleCapabilities
 import com.riplow.client.modules.ModuleDefinition
@@ -242,26 +245,95 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildNetworkPage() {
-        val card = card()
-        addEyebrow(card, "BEDROCK NETWORK")
-        addTitle(card, null, "Session diagnostics")
-        addBody(card, null, NativeBridge.nativeDiagnostics().ifBlank {
-            "Native diagnostics unavailable. The app remains usable."
-        })
-        val refresh = Button(this).apply {
-            text = "REFRESH DIAGNOSTICS"
+        val relay = card()
+        addEyebrow(relay, "BEDROCK RELAY")
+        addTitle(relay, null, "Local RakNet / UDP relay")
+
+        val host = EditText(this).apply {
+            hint = "Server host"
+            textSize = 13f
+            setSingleLine(true)
+            setText(prefs.getString("relay_host", ""))
+        }
+        relay.addView(host, buttonParams())
+
+        val remotePort = EditText(this).apply {
+            hint = "Server port"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            textSize = 13f
+            setSingleLine(true)
+            setText(prefs.getInt("relay_remote_port", 19132).toString())
+        }
+        relay.addView(remotePort, buttonParams())
+
+        val localPort = EditText(this).apply {
+            hint = "Local relay port"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            textSize = 13f
+            setSingleLine(true)
+            setText(prefs.getInt("relay_local_port", 19132).toString())
+        }
+        relay.addView(localPort, buttonParams())
+
+        val start = Button(this).apply {
+            text = "START RELAY"
             isAllCaps = false
             setOnClickListener {
-                showPage(Page.NETWORK)
-                status.text = "Network diagnostics refreshed"
+                val targetHost = host.text.toString().trim()
+                val targetPort = remotePort.text.toString().toIntOrNull() ?: 19132
+                val bindPort = localPort.text.toString().toIntOrNull() ?: 19132
+                if (BedrockRelayService.start(this@MainActivity, targetHost, targetPort, bindPort)) {
+                    prefs.edit()
+                        .putString("relay_host", targetHost)
+                        .putInt("relay_remote_port", targetPort)
+                        .putInt("relay_local_port", bindPort)
+                        .apply()
+                    status.text = "Relay start requested"
+                } else {
+                    status.text = "Invalid relay settings"
+                }
             }
         }
-        card.addView(refresh, buttonParams())
-        pageContainer.addView(card)
+        relay.addView(start, buttonParams())
 
-        addWorkspace("TRANSPORT", "RakNet / UDP aware",
-            "The diagnostics layer is designed for Bedrock's transport model. It is read-only and does not spoof, suppress or rewrite server traffic.",
-            "Read-only", "Safety boundary")
+        val stop = Button(this).apply {
+            text = "STOP RELAY"
+            isAllCaps = false
+            setOnClickListener {
+                BedrockRelayService.stop(this@MainActivity)
+                status.text = "Relay stop requested"
+            }
+        }
+        relay.addView(stop, buttonParams())
+
+        val copy = Button(this).apply {
+            text = "COPY LOCAL ADDRESS"
+            isAllCaps = false
+            setOnClickListener {
+                val port = localPort.text.toString().toIntOrNull() ?: 19132
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("Riplow relay", "127.0.0.1:$port")
+                )
+                status.text = "127.0.0.1:$port copied"
+            }
+        }
+        relay.addView(copy, buttonParams())
+        pageContainer.addView(relay)
+
+        val diagnostics = card()
+        addEyebrow(diagnostics, "RELAY STATUS")
+        addTitle(diagnostics, null, "Live transport")
+        addBody(diagnostics, null, RelayRuntime.summary())
+        pageContainer.addView(diagnostics)
+
+        val native = card()
+        addEyebrow(native, "NATIVE TELEMETRY")
+        addTitle(native, null, "Transport diagnostics")
+        addBody(native, null, NativeBridge.nativeDiagnostics().ifBlank {
+            "Native core unavailable"
+        })
+        pageContainer.addView(native)
     }
 
     private fun buildSettingsPage() {
