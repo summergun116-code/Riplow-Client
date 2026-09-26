@@ -15,7 +15,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
-import com.riplow.client.modules.ModuleRuntime
+import com.riplow.client.modules.ModuleRuntime\nimport com.riplow.client.modules.PerformancePolicy
 
 /**
  * Executes the first real Android-side modules as a lightweight overlay HUD.
@@ -34,7 +34,7 @@ class ModuleOverlayHost(
     private val updater = object : Runnable {
         override fun run() {
             updateLabels()
-            if (root != null) handler.postDelayed(this, 1000L)
+            if (root != null) handler.postDelayed(this, PerformancePolicy.overlayUpdateMs(context.getSharedPreferences("riplow_settings", Context.MODE_PRIVATE)))
         }
     }
 
@@ -57,7 +57,7 @@ class ModuleOverlayHost(
 
         updateLabels()
         handler.removeCallbacks(updater)
-        handler.postDelayed(updater, 1000L)
+        handler.postDelayed(updater, PerformancePolicy.overlayUpdateMs(prefs))
     }
 
     private fun build() {
