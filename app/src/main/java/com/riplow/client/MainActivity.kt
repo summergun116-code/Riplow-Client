@@ -165,7 +165,6 @@ class MainActivity : AppCompatActivity() {
         val summary = card()
         addEyebrow(summary, "MODULE LIBRARY")
         addTitle(summary, null, ModuleRegistry.all.size.toString() + " focused modules")
-        addBody(summary, null, "WClient-compatible modules plus Riplow utilities. WAura is excluded from the catalog.")
         pageContainer.addView(summary)
 
         ModuleRegistry.all.groupBy { it.category }.forEach { (category, modules) ->
