@@ -384,8 +384,9 @@ class ClientOverlayService : Service() {
             setPadding(0, dp(3), 0, 0)
         })
 
+        val status = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
         textBox.addView(TextView(this).apply {
-            text = ModuleRuntime.status(this@ClientOverlayService, prefs, module)
+            text = status
             textSize = 8f
             setTextColor(
                 when {
