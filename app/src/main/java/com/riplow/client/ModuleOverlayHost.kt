@@ -15,7 +15,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
-import com.riplow.client.modules.ModuleRuntime\nimport com.riplow.client.modules.PerformancePolicy
+import com.riplow.client.modules.ModuleRuntime
+import com.riplow.client.modules.PerformancePolicy
 
 /**
  * Executes the first real Android-side modules as a lightweight overlay HUD.
