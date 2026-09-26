@@ -1,0 +1,145 @@
+package com.riplow.client.modules
+
+enum class FeatureImplementation {
+    READY,
+    NATIVE_TELEMETRY,
+    GAME_BRIDGE_REQUIRED,
+    PLANNED,
+    SERVER_DISABLED
+}
+
+enum class FeatureRisk {
+    CLIENT_SIDE,
+    GAMEPLAY_CHANGING,
+    SERVER_INTERACTION
+}
+
+data class MasterFeature(
+    val number: Int,
+    val id: String,
+    val title: String,
+    val category: String,
+    val implementation: FeatureImplementation,
+    val risk: FeatureRisk = FeatureRisk.GAME_BRIDGE_REQUIRED,
+    val description: String
+)
+
+object MasterFeatureCatalog {
+    val all: List<MasterFeature> = listOf(
+        feature(1, "kill_aura", "KillAura", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automated combat target handling; disabled by Lifeboat policy."),
+        feature(2, "mob_aura", "MobAura", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automated hostile-mob targeting; disabled by Lifeboat policy."),
+        feature(3, "target_selector", "Target Selector", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Deterministic target selection rules."),
+        feature(4, "target_priority", "Target Priority", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Configurable target ordering."),
+        feature(5, "single_target", "Single Target Mode", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Restrict automated targeting to one target."),
+        feature(6, "multi_target", "Multi Target Mode", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Allow multiple target candidates."),
+        feature(7, "attack_range_control", "Attack Range Control", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Client-side attack-range configuration surface; server legality must be enforced."),
+        feature(8, "hitbox_display", "Hitbox Display", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Display target hitboxes without modifying them."),
+        feature(9, "auto_crit", "Auto-Crit", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automated critical-hit behavior; disabled by Lifeboat policy."),
+        feature(10, "reach_display", "Reach Display", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Display measured reach values only."),
+        feature(11, "cps_counter", "CPS Counter", "Combat", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Local click-rate telemetry."),
+        feature(12, "combat_target_hud", "Combat Target HUD", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Target information display when game data is available."),
+        feature(13, "attack_delay_control", "Attack Delay Control", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Attack timing control surface; disabled by Lifeboat policy."),
+        feature(14, "enemy_filter", "Enemy Filter", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Target filtering rules."),
+        feature(15, "friend_target_list", "Friend / Target List", "Combat", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Persistent local target/friend organization."),
+
+        feature(16, "auto_mine", "AutoMine", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automated mining; disabled by Lifeboat policy."),
+        feature(17, "tp_mine", "TPMine", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport-assisted mining; disabled by Lifeboat policy."),
+        feature(18, "nuker", "Nuker", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Bulk automated block breaking; disabled by Lifeboat policy."),
+        feature(19, "ore_esp", "Ore ESP", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Reveal hidden ore locations; disabled by Lifeboat policy."),
+        feature(20, "storage_esp", "Storage ESP", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate storage through normal visibility rules; disabled by Lifeboat policy."),
+        feature(21, "stash_finder", "Stash Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Scan worlds for hidden storage patterns."),
+        feature(22, "base_finder", "Base Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Scan worlds for likely player bases."),
+        feature(23, "chunk_finder", "Chunk Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Chunk-level search and indexing."),
+        feature(24, "new_chunk_detector", "New Chunk Detector", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Highlight newly observed chunks."),
+        feature(25, "block_finder", "Block Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate specified blocks."),
+        feature(26, "block_tracer", "Block Tracer", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Draw traces to visible block targets."),
+        feature(27, "spawner_finder", "Spawner Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate mob spawner structures."),
+        feature(28, "bed_finder", "Bed Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate beds by world scanning."),
+        feature(29, "entity_finder", "Entity Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Search loaded entities."),
+        feature(30, "structure_finder", "Structure Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate structures by world analysis."),
+        feature(31, "cave_finder", "Cave Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Reveal cave systems; disabled by Lifeboat policy."),
+        feature(32, "portal_finder", "Portal Finder", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Locate portal blocks/structures."),
+        feature(33, "block_inspector", "Block Inspector", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Inspect targeted block state."),
+        feature(34, "chunk_inspector", "Chunk Inspector", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Inspect loaded chunk metadata."),
+        feature(35, "world_scanner", "World Scanner", "Mining & World", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Indexed world search with explicit scan boundaries."),
+
+        feature(36, "teleport", "Teleport", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Local teleport control; server legality must be enforced."),
+        feature(37, "surface_tp", "SurfaceTP", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport to a safe surface."),
+        feature(38, "block_tp", "BlockTP", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport to a selected block."),
+        feature(39, "chest_tp", "ChestTP", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport to a chest target."),
+        feature(40, "entity_tp", "EntityTP", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport to an entity."),
+        feature(41, "fly", "Fly", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Free-flight control; disabled by Lifeboat policy."),
+        feature(42, "noclip", "NoClip", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Collision bypass; disabled by Lifeboat policy."),
+        feature(43, "speed", "Speed", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Movement-speed modification; disabled by Lifeboat policy."),
+        feature(44, "glide", "Glide", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Controlled gliding; disabled by Lifeboat policy."),
+        feature(45, "spider", "Spider", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Wall-climb movement; disabled by Lifeboat policy."),
+        feature(46, "step", "Step", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Modified step height; disabled by Lifeboat policy."),
+        feature(47, "long_jump", "LongJump", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Extended jump behavior; disabled by Lifeboat policy."),
+        feature(48, "air_jump", "AirJump", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Mid-air jump behavior; disabled by Lifeboat policy."),
+        feature(49, "phase", "Phase", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Collision-phase behavior; disabled by Lifeboat policy."),
+        feature(50, "safe_walk", "SafeWalk", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic edge-prevention movement."),
+        feature(51, "velocity_control", "Velocity Control", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Incoming knockback modification; disabled by Lifeboat policy."),
+        feature(52, "auto_sprint", "AutoSprint", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic sprint state; server rules must be enforced."),
+        feature(53, "freecam", "Freecam", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Detached camera mode; disabled by Lifeboat policy."),
+        feature(54, "waypoint_teleport", "Waypoint Teleport", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Teleport to saved waypoints."),
+        feature(55, "death_location_teleport", "Death-Location Teleport", "Teleport & Movement", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Return to saved death location."),
+
+        feature(56, "auto_armor", "AutoArmor", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic equipment selection."),
+        feature(57, "auto_totem", "AutoTotem", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic emergency item placement."),
+        feature(58, "auto_tool", "AutoTool", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic tool selection."),
+        feature(59, "auto_eat", "AutoEat", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic food use."),
+        feature(60, "auto_pot", "AutoPot", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic potion use."),
+        feature(61, "auto_shield", "AutoShield", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic shield behavior."),
+        feature(62, "offhand_manager", "Offhand Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Offhand loadout management."),
+        feature(63, "inventory_manager", "Inventory Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Rule-based inventory organization."),
+        feature(64, "inventory_cleaner", "Inventory Cleaner", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Remove configured unwanted items."),
+        feature(65, "item_whitelist", "Item Whitelist", "Player & Inventory", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Persistent item allowlist."),
+        feature(66, "item_blacklist", "Item Blacklist", "Player & Inventory", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Persistent item blocklist."),
+        feature(67, "durability_manager", "Durability Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Track equipment durability."),
+        feature(68, "shulker_preview", "Shulker Preview", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Preview container contents."),
+        feature(69, "container_viewer", "Container Viewer", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Inspect open container state."),
+        feature(70, "chest_stealer", "Chest Stealer", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automated chest transfer; disabled by Lifeboat policy."),
+        feature(71, "hotbar_manager", "Hotbar Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Automatic hotbar organization."),
+        feature(72, "item_search", "Item Search", "Player & Inventory", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Local configuration/item search."),
+        feature(73, "item_information", "Item Information", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Selected-item metadata display."),
+        feature(74, "potion_manager", "Potion Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Potion/effect management."),
+        feature(75, "equipment_manager", "Equipment Manager", "Player & Inventory", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.GAMEPLAY_CHANGING, "Equipment loadout handling."),
+
+        feature(76, "proxy_mode", "Proxy Mode", "Proxy, Network & Server", FeatureImplementation.PLANNED, FeatureRisk.SERVER_INTERACTION, "Explicit user-selected proxy transport mode."),
+        feature(77, "direct_mode", "Direct Mode", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Direct Bedrock connection path."),
+        feature(78, "relay_mode", "Relay Mode", "Proxy, Network & Server", FeatureImplementation.PLANNED, FeatureRisk.SERVER_INTERACTION, "Explicit user-selected relay path."),
+        feature(79, "version_adapter", "Version Adapter", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Version detection and adapter selection."),
+        feature(80, "protocol_adapter", "Protocol Adapter", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Read-only protocol compatibility layer."),
+        feature(81, "packet_event_inspector", "Packet/Event Inspector", "Proxy, Network & Server", FeatureImplementation.NATIVE_TELEMETRY, FeatureRisk.CLIENT_SIDE, "Read-only transport/event inspection."),
+        feature(82, "packet_logger", "Packet Logger", "Proxy, Network & Server", FeatureImplementation.NATIVE_TELEMETRY, FeatureRisk.CLIENT_SIDE, "Read-only packet/event logging."),
+        feature(83, "connection_manager", "Connection Manager", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Server connection/session management."),
+        feature(84, "server_profiles", "Server Profiles", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Per-server Riplow settings."),
+        feature(85, "realm_profiles", "Realm Profiles", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Per-Realm configuration profiles."),
+        feature(86, "server_browser", "Server Browser", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Saved server discovery/browser workspace."),
+        feature(87, "quick_join", "Quick Join", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "One-tap server handoff."),
+        feature(88, "quick_reconnect", "Quick Reconnect", "Proxy, Network & Server", FeatureImplementation.READY, FeatureRisk.SERVER_INTERACTION, "Reconnect to the last saved server."),
+        feature(89, "server_ping", "Server Ping", "Proxy, Network & Server", FeatureImplementation.NATIVE_TELEMETRY, FeatureRisk.CLIENT_SIDE, "Read-only RakNet latency probe."),
+        feature(90, "network_diagnostics_master", "Network Diagnostics", "Proxy, Network & Server", FeatureImplementation.NATIVE_TELEMETRY, FeatureRisk.CLIENT_SIDE, "Latency, jitter, loss and protocol diagnostics."),
+
+        feature(91, "waypoints_manager", "Waypoints Manager", "Client & Configuration", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Persistent waypoint profiles."),
+        feature(92, "coordinates", "Coordinates", "Client & Configuration", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Coordinate readout."),
+        feature(93, "player_list", "Player List", "Client & Configuration", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "Player-list presentation."),
+        feature(94, "server_information", "Server Information", "Client & Configuration", FeatureImplementation.NATIVE_TELEMETRY, FeatureRisk.CLIENT_SIDE, "Server/MOTD/protocol/session information."),
+        feature(95, "world_information", "World Information", "Client & Configuration", FeatureImplementation.GAME_BRIDGE_REQUIRED, FeatureRisk.CLIENT_SIDE, "World/session metadata."),
+        feature(96, "configuration_manager", "Configuration Manager", "Client & Configuration", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Versioned import/export configuration system."),
+        feature(97, "profile_manager", "Profile Manager", "Client & Configuration", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Named profile switching."),
+        feature(98, "module_search", "Module Search", "Client & Configuration", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Fast searchable module navigation."),
+        feature(99, "click_gui", "ClickGUI", "Client & Configuration", FeatureImplementation.READY, FeatureRisk.CLIENT_SIDE, "Responsive configurable overlay interface."),
+        feature(100, "script_extension_system", "Script / Extension System", "Client & Configuration", FeatureImplementation.PLANNED, FeatureRisk.CLIENT_SIDE, "Sandboxed extension API with explicit permissions.")
+    )
+
+    private fun feature(
+        number: Int,
+        id: String,
+        title: String,
+        category: String,
+        implementation: FeatureImplementation,
+        risk: FeatureRisk,
+        description: String
+    ) = MasterFeature(number, id, title, category, implementation, risk, description)
+}
