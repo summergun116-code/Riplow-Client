@@ -279,6 +279,7 @@ class ClientOverlayService : Service() {
                 addSettingRow(list, "Reduced motion", "Shorten UI transitions", "reduced_motion")
                 addActionRow(list, "Reset local settings", "Clear Riplow preferences") {
                     prefs.edit().clear().apply()
+                    ModuleRegistry.all.forEach { NativeBridge.nativeSetModule(it.id, false) }
                     Toast.makeText(this, "Riplow settings reset", Toast.LENGTH_SHORT).show()
                     rebuildPanel()
                 }
@@ -328,7 +329,7 @@ class ClientOverlayService : Service() {
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
         val key = "module_" + module.id
         val remember = prefs.getBoolean("remember_modules", true)
-        val enabled = if (remember) prefs.getBoolean(key, key == "remember_modules") else false
+        val enabled = if (remember) prefs.getBoolean(key, false) else false
         NativeBridge.nativeSetModule(module.id, enabled)
 
         val row = LinearLayout(this).apply {
