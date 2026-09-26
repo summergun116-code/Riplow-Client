@@ -15,6 +15,10 @@ Riplow is a Minecraft Bedrock/MCPE Android client and launcher architecture focu
 - Network diagnostics built around Bedrock's RakNet/UDP model.
 - Reproducible builds and automated checks.
 
+## Riplow 1.2
+
+The 1.2 release consolidates Bedrock 1.26.51 compatibility handling, adaptive Riplow-side performance controls, searchable 100-feature module architecture, Lifeboat profile safeguards, RakNet/UDP diagnostics, and overlay/JNI reliability hardening.
+
 ## Development order
 
 1. Plan and architecture
