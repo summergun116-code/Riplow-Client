@@ -70,7 +70,7 @@ object ModuleRegistry {
         ModuleDefinition("client_menu", "Client Menu", "Quick access to Riplow controls.", "Client",
             listOf(ModuleSetting("defaultTab", "Default tab", "Tab opened by the shortcut.", listOf("Modules", "HUD", "Performance", "Network")))),
 
-        ModuleDefinition("fps_boost_profile", "FPS Boost Profile", "Safe device profile for reducing client-side overhead.", "Performance"),
+        ModuleDefinition("fps_boost_profile", "FPS Boost Profile", "Reduces Riplow overlay and diagnostic overhead while Minecraft is active.", "Performance",\n            listOf(ModuleSetting("mode", "Mode", "Local Riplow performance policy.", listOf("Balanced", "Performance", "Extreme"), "Performance"))),
         ModuleDefinition("fps_unlocker", "FPS Unlocker", "Frame-rate control when a compatible game bridge exists.", "Performance"),
         ModuleDefinition("shader_loader", "Shader Loader", "Manage compatible Bedrock shader/material profiles.", "Performance"),
         ModuleDefinition("render_budget", "Render Budget", "Track safe visual-complexity targets for a device.", "Performance"),
