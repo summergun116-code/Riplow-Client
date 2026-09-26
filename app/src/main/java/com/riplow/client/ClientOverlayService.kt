@@ -45,7 +45,7 @@ class ClientOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_OPEN || panel == null) showPanel()
+        if (intent?.action == ACTION_OPEN) showPanel()
         return START_STICKY
     }
 
@@ -124,7 +124,6 @@ class ClientOverlayService : Service() {
 
     private fun showPanel() {
         if (panel != null) return
-        activeTab = "Modules"
         calculateMenuSize()
         panel = buildPanel()
         panel?.alpha = 0f
