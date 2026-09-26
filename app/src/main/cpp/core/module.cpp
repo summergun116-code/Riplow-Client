@@ -101,3 +101,5 @@ const char* core_version() {
 ModuleManager& modules() {
     return g_modules;
 }
+
+}
