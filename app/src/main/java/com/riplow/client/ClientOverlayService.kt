@@ -13,7 +13,9 @@ import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -49,6 +51,7 @@ class ClientOverlayService : Service() {
     private var activeTab = "Modules"
     private var expandedModuleId: String? = null
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
+    private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var runtimeHost: ModuleOverlayHost
 
     override fun onCreate() {
@@ -661,7 +664,8 @@ class ClientOverlayService : Service() {
             result.text = "Probing RakNet UDP…"
             Thread {
                 val probe = BedrockServerProbe.probe(hostValue, portValue)
-                runOnUiThread {
+                mainHandler.post {
+                    if (isFinishingOrStopping()) return@post
                     probeButton.isEnabled = true
                     result.text = if (!probe.reachable || probe.info == null) {
                         "Unavailable • " + (probe.error ?: "No response")
@@ -728,6 +732,8 @@ class ClientOverlayService : Service() {
         }
     }
 
+    private fun isFinishingOrStopping(): Boolean = isDestroyed || isChangingConfigurations
+
     private fun backgroundShape(color: Int, radius: Int) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radius.toFloat()
@@ -738,6 +744,7 @@ class ClientOverlayService : Service() {
         (value * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
+        mainHandler.removeCallbacksAndMessages(null)
         runtimeHost.destroy()
         panel?.let { if (it.isAttachedToWindow) windowManager.removeView(it) }
         if (::bubble.isInitialized && bubble.isAttachedToWindow) {
