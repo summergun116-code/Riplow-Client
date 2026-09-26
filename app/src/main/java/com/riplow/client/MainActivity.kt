@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         minecraftState = addBody(minecraftCard, null, "Checking installation…")
         val play = Button(this).apply {
             text = "PLAY MINECRAFT"
-            textAllCaps = false
+            isAllCaps = false
             textSize = 13f
             setOnClickListener { launchMinecraft() }
         }
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         setting.options.forEach { option ->
             val button = Button(this).apply {
                 text = option
-                textAllCaps = false
+                isAllCaps = false
                 textSize = 12f
                 alpha = if (ModuleManager.setting(prefs, module.id, setting) == option) 1f else 0.58f
                 setOnClickListener {
@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity() {
         })
         val refresh = Button(this).apply {
             text = "REFRESH DIAGNOSTICS"
-            textAllCaps = false
+            isAllCaps = false
             setOnClickListener {
                 showPage(Page.NETWORK)
                 status.text = "Network diagnostics refreshed"
@@ -313,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         if (availability == ModuleAvailability.READY) {
             card.addView(Button(this).apply {
                 text = if (ModuleManager.isEnabled(prefs, module.id)) "Disable" else "Enable"
-                textAllCaps = false
+                isAllCaps = false
                 setOnClickListener {
                     ModuleManager.toggle(prefs, module.id)
                     showPage(Page.MODULES)
@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity() {
             val current = ModuleManager.setting(prefs, module.id, setting)
             card.addView(Button(this).apply {
                 text = setting.title + ": " + current
-                textAllCaps = false
+                isAllCaps = false
                 textSize = 11f
                 setOnClickListener {
                     ModuleManager.cycleSetting(prefs, module.id, setting)
