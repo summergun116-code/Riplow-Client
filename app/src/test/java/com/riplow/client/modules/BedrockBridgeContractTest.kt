@@ -20,15 +20,28 @@ class BedrockBridgeContractTest {
     }
 
     @Test
+    fun parses2026ReleaseNumbering() {
+        assertEquals(BedrockVersion(1, 26, 51), BedrockVersionParser.parse("26.51"))
+        assertEquals(BedrockVersion(1, 26, 51), BedrockVersionParser.parse("1.26.51"))
+        assertEquals(
+            BedrockVersion(1, 26, 60, 28),
+            BedrockVersionParser.parse("1.26.60-preview.28")
+        )
+    }
+
+    @Test
     fun rejectsMalformedVersion() {
         assertNull(BedrockVersionParser.parse("bedrock-latest"))
         assertNull(BedrockVersionParser.parse("1.21"))
     }
 
     @Test
-    fun noAdapterNeverClaimsReady() {
-        val info = BedrockBridgeRegistry.inspect(BedrockVersion(1, 99, 999))
-        assertEquals(BedrockBridgeState.VERSION_PARSED_NO_ADAPTER, info.state)
+    fun currentStableVersionGetsCompatibilityProfile() {
+        val info = BedrockBridgeRegistry.inspect(BedrockVersion(1, 26, 51))
+        assertEquals(BedrockBridgeState.VERSION_RECOGNIZED_NO_BRIDGE, info.state)
+        assertEquals(BedrockSupportLevel.CURRENT_STABLE, info.profile?.support)
+        assertEquals(BedrockReleaseChannel.STABLE, info.profile?.channel)
+        assertEquals(2193, info.profile?.networkProtocol)
         assertNull(info.adapterId)
     }
 }
