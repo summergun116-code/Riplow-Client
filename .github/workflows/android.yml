@@ -138,4 +138,4 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "$RELEASE_APK"
           cp apk-sha256.txt "$RELEASE_SHA"
 
-          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: module hardening, fail-safe JNI, launcher reliability, and CI consistency checks."             --latest
+          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: Bedrock 1.26.51 compatibility, adaptive performance runtime, allocation-free native diagnostics, 100-feature master catalog, searchable ClickGUI, Lifeboat compatibility safeguards, RakNet/UDP server diagnostics, launcher/overlay reliability fixes, and expanded regression coverage. Native Bedrock game hooks remain version-gated until explicitly verified."             --latest
