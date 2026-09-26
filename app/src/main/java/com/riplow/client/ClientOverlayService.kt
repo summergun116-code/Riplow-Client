@@ -22,6 +22,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.riplow.client.modules.ModuleDefinition
+import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
 
 class ClientOverlayService : Service() {
@@ -35,6 +36,7 @@ class ClientOverlayService : Service() {
     private var menuWidth = 0
     private var menuHeight = 0
     private var activeTab = "Modules"
+    private var expandedModuleId: String? = null
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
 
     override fun onCreate() {
@@ -124,6 +126,7 @@ class ClientOverlayService : Service() {
 
     private fun showPanel() {
         if (panel != null) return
+        ModuleManager.syncNative(prefs)
         calculateMenuSize()
         panel = buildPanel()
         panel?.alpha = 0f
@@ -247,7 +250,7 @@ class ClientOverlayService : Service() {
 
         when (activeTab) {
             "Modules" -> {
-                addSection(list, "ALL MODULES", "Core-registered helpers. Game integration is wired progressively.")
+                addSection(list, "ALL MODULES", "Registered helpers with persistent state and per-module settings.")
                 addModuleGrid(list, ModuleRegistry.all)
             }
             "HUD" -> {
@@ -276,10 +279,14 @@ class ClientOverlayService : Service() {
                 addSettingRow(list, "Compact menu", "Reduce the ClickGUI footprint", "compact_menu")
                 addSettingRow(list, "Remember modules", "Keep module state between sessions", "remember_modules")
                 addSettingRow(list, "Reduced motion", "Shorten UI transitions", "reduced_motion")
+                addActionRow(list, "Module config", "JSON format stores enabled state and module settings.") {
+                    val json = ModuleManager.exportJson(prefs)
+                    Toast.makeText(this, "Module config ready (${json.length} chars)", Toast.LENGTH_SHORT).show()
+                }
                 addActionRow(list, "Reset local settings", "Clear Riplow preferences") {
-                    prefs.edit().clear().apply()
-                    ModuleRegistry.all.forEach { NativeBridge.nativeSetModule(it.id, false) }
-                    Toast.makeText(this, "Riplow settings reset", Toast.LENGTH_SHORT).show()
+                    ModuleManager.reset(prefs)
+                    expandedModuleId = null
+                    Toast.makeText(this, "Riplow settings and modules reset", Toast.LENGTH_SHORT).show()
                     rebuildPanel()
                 }
             }
@@ -326,19 +333,18 @@ class ClientOverlayService : Service() {
     }
 
     private fun addModuleRow(parent: LinearLayout, module: ModuleDefinition) {
-        val key = "module_" + module.id
-        val remember = prefs.getBoolean("remember_modules", true)
-        val enabled = if (remember) prefs.getBoolean(key, false) else false
-        NativeBridge.nativeSetModule(module.id, enabled)
+        val enabled = ModuleManager.isEnabled(prefs, module.id)
+
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = backgroundShape(Color.rgb(24, 25, 29), 16)
+        }
 
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(10), dp(8))
-            background = backgroundShape(Color.rgb(24, 25, 29), 16)
             setOnClickListener {
-                val next = !enabled
-                if (remember) prefs.edit().putBoolean(key, next).apply()
-                NativeBridge.nativeSetModule(module.id, next)
+                ModuleManager.toggle(prefs, module.id)
                 rebuildPanel()
             }
         }
@@ -360,6 +366,23 @@ class ClientOverlayService : Service() {
 
         row.addView(textBox, LinearLayout.LayoutParams(0, dp(52), 1f))
 
+        if (module.settings.isNotEmpty()) {
+            row.addView(TextView(this).apply {
+                text = if (expandedModuleId == module.id) "▲" else "CFG"
+                textSize = 8f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(185, 188, 196))
+                background = backgroundShape(Color.rgb(37, 39, 45), 10)
+                setPadding(dp(8), 0, dp(8), 0)
+                setOnClickListener {
+                    expandedModuleId = if (expandedModuleId == module.id) null else module.id
+                    rebuildPanel()
+                }
+            }, LinearLayout.LayoutParams(-2, dp(30)).apply {
+                marginEnd = dp(7)
+            })
+        }
+
         row.addView(TextView(this).apply {
             text = if (enabled) "ON" else "OFF"
             textSize = 9f
@@ -372,11 +395,42 @@ class ClientOverlayService : Service() {
             setPadding(dp(10), 0, dp(10), 0)
         }, LinearLayout.LayoutParams(-2, dp(30)))
 
-        parent.addView(row, LinearLayout.LayoutParams(-1, dp(72)))
+        card.addView(row, LinearLayout.LayoutParams(-1, dp(72)))
+
+        if (expandedModuleId == module.id && module.settings.isNotEmpty()) {
+            module.settings.forEach { setting ->
+                val current = ModuleManager.setting(prefs, module.id, setting)
+                card.addView(LinearLayout(this).apply {
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(12), dp(6), dp(12), dp(6))
+                    setOnClickListener {
+                        ModuleManager.cycleSetting(prefs, module.id, setting)
+                        rebuildPanel()
+                    }
+
+                    addView(TextView(this@ClientOverlayService).apply {
+                        text = setting.title + "\n" + setting.description
+                        textSize = 9f
+                        setTextColor(Color.rgb(150, 153, 161))
+                    }, LinearLayout.LayoutParams(0, dp(42), 1f))
+
+                    addView(TextView(this@ClientOverlayService).apply {
+                        text = current
+                        textSize = 9f
+                        gravity = Gravity.CENTER
+                        setTextColor(Color.WHITE)
+                        background = backgroundShape(Color.rgb(37, 39, 45), 9)
+                        setPadding(dp(8), 0, dp(8), 0)
+                    }, LinearLayout.LayoutParams(-2, dp(28)))
+                }, LinearLayout.LayoutParams(-1, dp(52)))
+            }
+        }
+
+        parent.addView(card, LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT))
     }
 
     private fun addSettingRow(parent: LinearLayout, title: String, detail: String, key: String) {
-        val value = prefs.getBoolean(key, false)
+        val value = prefs.getBoolean(key, key == "remember_modules")
         val row = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(10), dp(8))
