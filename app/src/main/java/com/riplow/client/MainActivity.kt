@@ -18,7 +18,9 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.riplow.client.modules.MinecraftCompatibility
 import com.riplow.client.modules.ModuleRegistry
+import com.riplow.client.modules.ModuleRuntime
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -29,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var launchOverlay: FrameLayout
     private lateinit var loadingLogo: TextView
     private lateinit var loadingDetail: TextView
+    private lateinit var launchButton: Button
     private var launchRequested = false
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
     private var pulseAnimator: ObjectAnimator? = null
@@ -40,25 +43,26 @@ class MainActivity : AppCompatActivity() {
         launchOverlay = findViewById(R.id.launch_overlay)
         loadingLogo = findViewById(R.id.loading_logo)
         loadingDetail = findViewById(R.id.loading_detail)
+        launchButton = findViewById(R.id.launch_button)
 
         findViewById<TextView>(R.id.core_version).text =
             getString(R.string.version_format, NativeBridge.version())
 
         findViewById<TextView>(R.id.module_count).text =
-            "${ModuleRegistry.all.size} registered modules"
+            ModuleRegistry.all.size.toString() + " registered modules"
 
         refreshDiagnostics()
 
-        findViewById<Button>(R.id.launch_button).setOnClickListener { launchMinecraft() }
+        launchButton.setOnClickListener { launchMinecraft() }
         findViewById<Button>(R.id.client_button).setOnClickListener { enableClientMenu() }
         findViewById<Button>(R.id.diagnostics_button).setOnClickListener { refreshDiagnostics() }
-
     }
 
     override fun onResume() {
         super.onResume()
         if (launchRequested) {
             launchRequested = false
+            launchButton.isEnabled = true
             hideLaunchScreen()
         }
         if (prefs.getBoolean("open_after_overlay_permission", false) && Settings.canDrawOverlays(this)) {
@@ -74,36 +78,39 @@ class MainActivity : AppCompatActivity() {
         null
     }
 
-    private fun minecraftInstalled(): Boolean = minecraftInfo() != null
-
     private fun refreshDiagnostics() {
-        val info = minecraftInfo()
-        val installed = info != null
+        val install = MinecraftCompatibility.detect(this)
         val memory = getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val memoryInfo = ActivityManager.MemoryInfo()
         memory.getMemoryInfo(memoryInfo)
-        val version = info?.versionName ?: "not detected"
-        val overlay = if (Settings.canDrawOverlays(this)) "granted" else "required"
 
         findViewById<TextView>(R.id.status).text =
-            if (installed) "Minecraft detected  •  $version" else "Minecraft not detected"
+            if (install.installed) {
+                "Minecraft detected • " + install.versionName
+            } else {
+                "Minecraft not detected"
+            }
+
         findViewById<TextView>(R.id.diagnostics).text =
-            "Minecraft: ${if (installed) "installed" else "not visible / installed"}" +
-                "\nVersion: $version" +
-                "\nOverlay permission: $overlay" +
-                "\nAvailable RAM: ${memoryInfo.availMem / (1024L * 1024L)} MB" +
+            "Minecraft: " + (if (install.installed) "installed" else "not visible / installed") +
+                "\nVersion: " + install.versionName +
+                "\nVersion code: " + install.versionCode +
+                "\nOverlay permission: " + (if (Settings.canDrawOverlays(this)) "granted" else "required") +
+                "\nNative core: " + NativeBridge.loadStatus() +
+                "\nBridge: " + MinecraftCompatibility.bridgeState(this) +
+                "\nAvailable RAM: " + (memoryInfo.availMem / (1024L * 1024L)) + " MB" +
                 "\n\n" + NativeBridge.nativeDiagnostics()
     }
 
     private fun enableClientMenu() {
         if (!Settings.canDrawOverlays(this)) {
+            prefs.edit().putBoolean("open_after_overlay_permission", true).apply()
             startActivity(
                 Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
+                    Uri.parse("package:" + packageName)
                 )
             )
-            prefs.edit().putBoolean("open_after_overlay_permission", true).apply()
             findViewById<TextView>(R.id.status).text = "Overlay permission required"
             return
         }
@@ -121,15 +128,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchMinecraft() {
-        if (!minecraftInstalled()) {
+        if (launchRequested) return
+
+        val install = MinecraftCompatibility.detect(this)
+        if (!install.installed) {
             loadingDetail.text = "Minecraft was not detected on this device"
             findViewById<TextView>(R.id.status).text = "Minecraft not installed or not visible"
             return
         }
 
         launchRequested = true
+        launchButton.isEnabled = false
+        ModuleRuntime.resetSession()
         showLaunchScreen()
-        loadingDetail.text = "Minecraft installation found"
+        loadingDetail.text = "Minecraft " + install.versionName + " found"
 
         handler.postDelayed({
             if (!launchRequested) return@postDelayed
@@ -154,6 +166,7 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.status).text = "Minecraft launch requested"
             } catch (e: Exception) {
                 launchRequested = false
+                launchButton.isEnabled = true
                 loadingDetail.text = "Android could not start Minecraft"
                 findViewById<TextView>(R.id.status).text =
                     "Minecraft launch failed: " + e.javaClass.simpleName
@@ -206,6 +219,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         launchRequested = false
+        launchButton.isEnabled = true
         pulseAnimator?.cancel()
         pulseAnimator = null
         handler.removeCallbacksAndMessages(null)
