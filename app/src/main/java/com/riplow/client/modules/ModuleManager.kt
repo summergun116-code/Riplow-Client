@@ -27,6 +27,13 @@ object ModuleManager {
         }
 
     fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
+        if (ModuleRegistry.requiresGameBridge(id)) {
+            transientState[id] = false
+            prefs.edit().remove(ENABLED_PREFIX + id).apply()
+            try { NativeBridge.nativeSetModule(id, false) } catch (_: Throwable) {}
+            return false
+        }
+
         transientState[id] = enabled
         val editor = prefs.edit()
         if (remembers(prefs)) {
@@ -68,7 +75,8 @@ object ModuleManager {
     fun syncNative(prefs: SharedPreferences) {
         ModuleRegistry.all.forEach { module ->
             try {
-                NativeBridge.nativeSetModule(module.id, isEnabled(prefs, module.id))
+                val enabled = if (ModuleRegistry.requiresGameBridge(module.id)) false else isEnabled(prefs, module.id)
+                NativeBridge.nativeSetModule(module.id, enabled)
             } catch (_: Throwable) {
                 // UI/state persistence remains usable even when native integration is unavailable.
             }
