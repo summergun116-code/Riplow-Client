@@ -1,0 +1,140 @@
+package com.riplow.client.modules
+
+import android.content.SharedPreferences
+import com.riplow.client.NativeBridge
+import org.json.JSONObject
+
+/**
+ * Riplow's persistent module layer.
+ *
+ * Architecture is intentionally simple: identity/category/settings live in
+ * ModuleRegistry, mutable state lives here, and the native module core is
+ * synchronised only when state changes or the overlay is opened.
+ */
+object ModuleManager {
+    private const val ENABLED_PREFIX = "module_enabled_"
+    private const val SETTING_PREFIX = "module_setting_"
+
+    fun isEnabled(prefs: SharedPreferences, id: String): Boolean =
+        prefs.getBoolean(ENABLED_PREFIX + id, false)
+
+    fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
+        val accepted = try {
+            NativeBridge.nativeSetModule(id, enabled)
+        } catch (_: Throwable) {
+            false
+        }
+        prefs.edit().putBoolean(ENABLED_PREFIX + id, enabled).apply()
+        return accepted
+    }
+
+    fun toggle(prefs: SharedPreferences, id: String): Boolean {
+        val next = !isEnabled(prefs, id)
+        setEnabled(prefs, id, next)
+        return next
+    }
+
+    fun setting(prefs: SharedPreferences, moduleId: String, setting: ModuleSetting): String =
+        prefs.getString(SETTING_PREFIX + moduleId + "_" + setting.id, setting.defaultValue)
+            ?: setting.defaultValue
+
+    fun cycleSetting(
+        prefs: SharedPreferences,
+        moduleId: String,
+        setting: ModuleSetting
+    ): String {
+        val current = setting(prefs, moduleId, setting)
+        val currentIndex = setting.options.indexOf(current).coerceAtLeast(0)
+        val next = setting.options[(currentIndex + 1) % setting.options.size]
+        prefs.edit().putString(SETTING_PREFIX + moduleId + "_" + setting.id, next).apply()
+        return next
+    }
+
+    fun syncNative(prefs: SharedPreferences) {
+        ModuleRegistry.all.forEach { module ->
+            try {
+                NativeBridge.nativeSetModule(module.id, isEnabled(prefs, module.id))
+            } catch (_: Throwable) {
+                // UI/state persistence remains usable even when native integration is unavailable.
+            }
+        }
+    }
+
+    fun nativeStateMap(): Map<String, Boolean> {
+        return try {
+            NativeBridge.nativeModuleSummary()
+                .lineSequence()
+                .mapNotNull { line ->
+                    val parts = line.split("|")
+                    if (parts.size >= 4) parts[0] to (parts[3] == "ON") else null
+                }
+                .toMap()
+        } catch (_: Throwable) {
+            emptyMap()
+        }
+    }
+
+    fun reset(prefs: SharedPreferences) {
+        val editor = prefs.edit()
+        ModuleRegistry.all.forEach { module ->
+            editor.remove(ENABLED_PREFIX + module.id)
+            module.settings.forEach { setting ->
+                editor.remove(SETTING_PREFIX + module.id + "_" + setting.id)
+            }
+        }
+        editor.apply()
+        ModuleRegistry.all.forEach { module ->
+            try {
+                NativeBridge.nativeSetModule(module.id, false)
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
+    fun exportJson(prefs: SharedPreferences): String {
+        val root = JSONObject()
+        root.put("version", 1)
+        val modules = JSONObject()
+        ModuleRegistry.all.forEach { module ->
+            val item = JSONObject()
+            item.put("enabled", isEnabled(prefs, module.id))
+            val values = JSONObject()
+            module.settings.forEach { setting ->
+                values.put(setting.id, setting(prefs, module.id, setting))
+            }
+            item.put("settings", values)
+            modules.put(module.id, item)
+        }
+        root.put("modules", modules)
+        return root.toString(2)
+    }
+
+    fun importJson(prefs: SharedPreferences, raw: String): Boolean {
+        return try {
+            val root = JSONObject(raw)
+            val modules = root.optJSONObject("modules") ?: return false
+            val editor = prefs.edit()
+
+            ModuleRegistry.all.forEach { module ->
+                val item = modules.optJSONObject(module.id) ?: return@forEach
+                if (item.has("enabled")) {
+                    editor.putBoolean(ENABLED_PREFIX + module.id, item.optBoolean("enabled"))
+                }
+                val settings = item.optJSONObject("settings")
+                module.settings.forEach { setting ->
+                    if (settings != null && settings.has(setting.id)) {
+                        editor.putString(
+                            SETTING_PREFIX + module.id + "_" + setting.id,
+                            settings.optString(setting.id, setting.defaultValue)
+                        )
+                    }
+                }
+            }
+            editor.apply()
+            syncNative(prefs)
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+}
