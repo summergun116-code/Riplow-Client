@@ -31,8 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pageContainer: LinearLayout
     private lateinit var status: TextView
     private lateinit var moduleCount: TextView
-    private lateinit var minecraftVersion: TextView
-    private lateinit var minecraftState: TextView
+    private var minecraftVersion: TextView? = null
+    private var minecraftState: TextView? = null
     private var launchRequested = false
     private var launchOverlay: View? = null
     private var loadingDetail: TextView? = null
@@ -46,8 +46,6 @@ class MainActivity : AppCompatActivity() {
         pageContainer = findViewById(R.id.page_container)
         status = findViewById(R.id.status)
         moduleCount = findViewById(R.id.module_count)
-        minecraftVersion = findViewById(R.id.minecraft_version)
-        minecraftState = findViewById(R.id.minecraft_state)
 
         findViewById<TextView>(R.id.version_chip).text = "Riplow " + BuildConfig.VERSION_NAME
         moduleCount.text = ModuleRegistry.all.size.toString() + " focused Minecraft modules"
@@ -111,6 +109,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         pageContainer.removeAllViews()
+        minecraftVersion = null
+        minecraftState = null
         when (page) {
             Page.HOME -> buildHomePage()
             Page.MODULES -> buildModulesPage()
@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity() {
     private fun buildHomePage() {
         val minecraftCard = card()
         addEyebrow(minecraftCard, "MINECRAFT")
-        minecraftVersion = addTitle(minecraftCard, minecraftVersion, "Minecraft")
-        minecraftState = addBody(minecraftCard, minecraftState, "Checking installation…")
+        minecraftVersion = addTitle(minecraftCard, null, "Minecraft")
+        minecraftState = addBody(minecraftCard, null, "Checking installation…")
         val play = Button(this).apply {
             text = "PLAY MINECRAFT"
             textAllCaps = false
@@ -404,12 +404,12 @@ class MainActivity : AppCompatActivity() {
     private fun refreshMinecraftState() {
         val install = MinecraftCompatibility.detect(this)
         if (install.installed) {
-            minecraftVersion.text = install.versionName
-            minecraftState.text = "Installed • version code " + install.versionCode
+            minecraftVersion?.text = install.versionName
+            minecraftState?.text = "Installed • version code " + install.versionCode
             status.text = "Minecraft ready"
         } else {
-            minecraftVersion.text = "Not detected"
-            minecraftState.text = "Install Minecraft Bedrock to use the launcher."
+            minecraftVersion?.text = "Not detected"
+            minecraftState?.text = "Install Minecraft Bedrock to use the launcher."
             status.text = "Minecraft not detected"
         }
     }

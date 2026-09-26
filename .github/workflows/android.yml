@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: riplow-android-\${{ github.ref }}
+  group: riplow-android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -82,8 +82,7 @@ jobs:
 
           "$BUILD_TOOLS/apksigner" verify --verbose "$DEBUG_APK"
           BADGING=$("$BUILD_TOOLS/aapt2" dump badging "$DEBUG_APK")
-          printf '%s
-' "$BADGING" | grep -F "package: name='com.riplow.client'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.riplow.client'"
           unzip -l "$DEBUG_APK" | grep -Eq 'lib/(arm64-v8a|armeabi-v7a|x86_64|x86)/libriplow_core\.so'
           unzip -t "$DEBUG_APK" >/dev/null
           unzip -t "$RELEASE_APK" >/dev/null
@@ -103,7 +102,7 @@ jobs:
       - name: Create versioned GitHub release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
