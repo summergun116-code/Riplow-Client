@@ -61,12 +61,12 @@ jobs:
           echo "Kotlin module definitions: $KOTLIN_COUNT"
           echo "Native module definitions: $NATIVE_COUNT"
 
-          test "$KOTLIN_COUNT" -gt 0
-          test "$KOTLIN_COUNT" -eq "$NATIVE_COUNT"
+          test "$KOTLIN_COUNT" -gt "$NATIVE_COUNT"
 
           grep -F 'gameBridgeIds' app/src/main/java/com/riplow/client/modules/ModuleRegistry.kt
           grep -F 'Native core unavailable' app/src/main/java/com/riplow/client/NativeBridge.kt
-          grep -F 'limit = 4' app/src/main/java/com/riplow/client/modules/ModuleManager.kt
+          ! grep -F 'limit = 4' app/src/main/java/com/riplow/client/modules/ModuleManager.kt
+          ! grep -F '.description' app/src/main/java/com/riplow/client/MainActivity.kt
 
       - name: Lint debug
         run: gradle :app:lintDebug --stacktrace --no-daemon
@@ -124,4 +124,4 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "$RELEASE_APK"
           cp apk-sha256.txt "$RELEASE_SHA"
 
-          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: focused Minecraft companion redesign, 36 legitimate modules, external Minecraft launch, no injected overlay service, no gameplay automation, Bedrock-aware diagnostics, and lighter app architecture."             --latest
+          gh release create "$RELEASE_TAG" "$RELEASE_APK" "$RELEASE_SHA"             --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "Riplow Client $RELEASE_TAG"             --notes "Riplow $RELEASE_TAG: expanded Minecraft module catalog, external Minecraft launch, configurable modules, Bedrock-aware diagnostics, and bridge-gated game integration."             --latest
