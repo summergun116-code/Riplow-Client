@@ -31,6 +31,7 @@ import com.riplow.client.modules.ModuleRuntime
 class ClientOverlayService : Service() {
     companion object {
         const val ACTION_OPEN = "com.riplow.client.OPEN"
+        const val EXTRA_TAB = "com.riplow.client.TAB"
     }
 
     private lateinit var windowManager: WindowManager
@@ -53,7 +54,14 @@ class ClientOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_OPEN) showPanel()
+        if (intent?.action == ACTION_OPEN) {
+            intent.getStringExtra(EXTRA_TAB)?.let { requestedTab ->
+                if (requestedTab in listOf("Modules", "HUD", "Performance", "Network", "Settings")) {
+                    activeTab = requestedTab
+                }
+            }
+            showPanel()
+        }
         return START_STICKY
     }
 
