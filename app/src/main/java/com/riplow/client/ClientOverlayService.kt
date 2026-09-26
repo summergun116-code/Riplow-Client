@@ -728,9 +728,10 @@ class ClientOverlayService : Service() {
                             " • " + versionNote + " • " + probe.elapsedMs + " ms"
                     }
                 }
-            }.start()
+            }
         }
     }
+
     private fun addActionRow(
         parent: LinearLayout,
         title: String,
