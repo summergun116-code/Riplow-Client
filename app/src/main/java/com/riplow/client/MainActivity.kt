@@ -18,6 +18,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.riplow.client.modules.ModuleRegistry
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -43,13 +44,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.core_version).text =
             getString(R.string.version_format, NativeBridge.version())
 
+        findViewById<TextView>(R.id.module_count).text =
+            "${ModuleRegistry.all.size} registered modules"
+
         refreshDiagnostics()
 
         findViewById<Button>(R.id.launch_button).setOnClickListener { launchMinecraft() }
         findViewById<Button>(R.id.client_button).setOnClickListener { enableClientMenu() }
         findViewById<Button>(R.id.diagnostics_button).setOnClickListener { refreshDiagnostics() }
 
-        startLoadingPulse()
     }
 
     override fun onResume() {
@@ -162,6 +165,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLaunchScreen() {
+        startLoadingPulse()
         launchOverlay.visibility = View.VISIBLE
         launchOverlay.alpha = 0f
         launchOverlay.animate()
@@ -181,6 +185,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideLaunchScreen() {
+        pulseAnimator?.cancel()
+        pulseAnimator = null
         launchOverlay.animate()
             .alpha(0f)
             .setDuration(220)

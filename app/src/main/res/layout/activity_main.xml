@@ -305,7 +305,8 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="9dp"
-                            android:text="24 registered modules"
+                            android:id="@+id/module_count"
+                            android:text="0 registered modules"
                             android:textColor="@color/riplow_foreground"
                             android:textSize="20sp"
                             android:textStyle="bold"/>

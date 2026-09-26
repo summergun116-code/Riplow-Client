@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-concurrency:
-  group: riplow-android-${{ github.ref }}
-  # Keep main-branch verification runs; only supersede pull-request runs.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 permissions:
   contents: write
 

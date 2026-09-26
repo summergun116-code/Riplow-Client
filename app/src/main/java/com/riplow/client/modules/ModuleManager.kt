@@ -19,12 +19,14 @@ object ModuleManager {
     private fun remembers(prefs: SharedPreferences): Boolean =
         prefs.getBoolean("remember_modules", true)
 
-    fun isEnabled(prefs: SharedPreferences, id: String): Boolean =
-        if (remembers(prefs)) {
+    fun isEnabled(prefs: SharedPreferences, id: String): Boolean {
+        if (ModuleRegistry.requiresGameBridge(id)) return false
+        return if (remembers(prefs)) {
             prefs.getBoolean(ENABLED_PREFIX + id, false)
         } else {
             transientState[id] ?: false
         }
+    }
 
     fun setEnabled(prefs: SharedPreferences, id: String, enabled: Boolean): Boolean {
         if (ModuleRegistry.requiresGameBridge(id)) {
@@ -51,9 +53,9 @@ object ModuleManager {
     }
 
     fun toggle(prefs: SharedPreferences, id: String): Boolean {
+        if (ModuleRegistry.requiresGameBridge(id)) return false
         val next = !isEnabled(prefs, id)
-        setEnabled(prefs, id, next)
-        return next
+        return setEnabled(prefs, id, next)
     }
 
     fun setting(prefs: SharedPreferences, moduleId: String, setting: ModuleSetting): String =
@@ -73,9 +75,11 @@ object ModuleManager {
     }
 
     fun syncNative(prefs: SharedPreferences) {
+        val current = nativeStateMap()
         ModuleRegistry.all.forEach { module ->
+            val enabled = isEnabled(prefs, module.id)
+            if (current[module.id] == enabled) return@forEach
             try {
-                val enabled = if (ModuleRegistry.requiresGameBridge(module.id)) false else isEnabled(prefs, module.id)
                 NativeBridge.nativeSetModule(module.id, enabled)
             } catch (_: Throwable) {
                 // UI/state persistence remains usable even when native integration is unavailable.
@@ -142,15 +146,22 @@ object ModuleManager {
             ModuleRegistry.all.forEach { module ->
                 val item = modules.optJSONObject(module.id) ?: return@forEach
                 if (item.has("enabled")) {
-                    editor.putBoolean(ENABLED_PREFIX + module.id, item.optBoolean("enabled"))
+                    if (ModuleRegistry.requiresGameBridge(module.id)) {
+                        editor.remove(ENABLED_PREFIX + module.id)
+                    } else {
+                        editor.putBoolean(ENABLED_PREFIX + module.id, item.optBoolean("enabled"))
+                    }
                 }
                 val settings = item.optJSONObject("settings")
                 module.settings.forEach { setting ->
                     if (settings != null && settings.has(setting.id)) {
-                        editor.putString(
-                            SETTING_PREFIX + module.id + "_" + setting.id,
-                            settings.optString(setting.id, setting.defaultValue)
-                        )
+                        val value = settings.optString(setting.id, setting.defaultValue)
+                        if (setting.options.contains(value)) {
+                            editor.putString(
+                                SETTING_PREFIX + module.id + "_" + setting.id,
+                                value
+                            )
+                        }
                     }
                 }
             }

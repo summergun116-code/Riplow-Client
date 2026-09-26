@@ -103,8 +103,12 @@ class ClientOverlayService : Service() {
             .coerceAtLeast(dp(if (compact) 420 else 520))
         menuHeight = (metrics.heightPixels * heightRatio).toInt()
             .coerceAtLeast(dp(if (compact) 290 else 310))
-        menuWidth = menuWidth.coerceAtMost(dp(980))
-        menuHeight = menuHeight.coerceAtMost(dp(620))
+        menuWidth = menuWidth
+            .coerceAtMost(dp(980))
+            .coerceAtMost((metrics.widthPixels - dp(24)).coerceAtLeast(dp(280)))
+        menuHeight = menuHeight
+            .coerceAtMost(dp(620))
+            .coerceAtMost((metrics.heightPixels - dp(24)).coerceAtLeast(dp(240)))
     }
 
     private fun createBubble() {
