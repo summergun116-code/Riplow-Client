@@ -52,8 +52,7 @@ Java_com_riplow_client_NativeBridge_nativeDiagnosticsNative(JNIEnv* env, jobject
     std::string output =
         "Modules: " + std::to_string(riplow::modules().enabled_count()) +
         "/" + std::to_string(riplow::modules().size());
-    output += "
-Profile: " + riplow::performance().profile_name();
+    output += "\nProfile: " + riplow::performance().profile_name();
     output += "
 Frame samples: " + std::to_string(frame.samples);
     output += "
