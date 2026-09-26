@@ -145,16 +145,27 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        startClientOverlay()
+        startClientOverlay(tab)
     }
 
-    private fun startClientOverlay() {
-        ContextCompat.startForegroundService(
-            this,
-            Intent(this, ClientOverlayService::class.java)
-                .setAction(ClientOverlayService.ACTION_OPEN)
-        )
-        findViewById<TextView>(R.id.status).text = "Riplow menu opening…"
+    private fun startClientOverlay(tab: String = "Modules") {
+        try {
+            ContextCompat.startForegroundService(
+                this,
+                Intent(this, ClientOverlayService::class.java)
+                    .setAction(ClientOverlayService.ACTION_OPEN)
+                    .putExtra(ClientOverlayService.EXTRA_TAB, tab)
+            )
+            findViewById<TextView>(R.id.status).text = "Riplow menu opening…"
+        } catch (error: Throwable) {
+            prefs.edit()
+                .remove("open_after_overlay_permission")
+                .remove("pending_overlay_tab")
+                .apply()
+            findViewById<TextView>(R.id.status).text =
+                "Overlay service failed: " + error.javaClass.simpleName
+        }
+    }
     }
 
     private fun launchMinecraft() {
