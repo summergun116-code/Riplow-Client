@@ -54,6 +54,7 @@ class ClientOverlayService : Service() {
     private var menuHeight = 0
     private var activeTab = "Modules"
     private var expandedModuleId: String? = null
+    private var moduleSearchQuery = ""
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val probeExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -233,8 +234,8 @@ class ClientOverlayService : Service() {
         }, LinearLayout.LayoutParams(0, dp(38), 1f))
 
         header.addView(TextView(this).apply {
-            text = "${ModuleRegistry.all.size} modules"
-            textSize = 10f
+            text = "${MasterFeatureCatalog.all.size} core features • ${ModuleRegistry.all.size} runtime modules"
+            textSize = 9f
             setTextColor(Color.rgb(185, 188, 196))
             gravity = Gravity.CENTER
             background = backgroundShape(Color.rgb(27, 29, 34), 50)
@@ -313,8 +314,49 @@ class ClientOverlayService : Service() {
 
         when (activeTab) {
             "Modules" -> {
-                addSection(list, "ALL MODULES", "Registered helpers with persistent state and per-module settings.")
-                addModuleGrid(list, ModuleRegistry.all)
+                addSection(
+                    list,
+                    "ALL MODULES",
+                    "100-feature master catalog backed by runtime modules and explicit bridge states."
+                )
+
+                val search = EditText(this).apply {
+                    hint = "Search modules…"
+                    textSize = 11f
+                    singleLine = true
+                    inputType = InputType.TYPE_CLASS_TEXT
+                    setText(moduleSearchQuery)
+                    setTextColor(Color.WHITE)
+                    setHintTextColor(Color.rgb(110, 113, 120))
+                    background = backgroundShape(Color.rgb(24, 25, 29), 12)
+                    setPadding(dp(12), 0, dp(12), 0)
+                    addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                            moduleSearchQuery = s?.toString().orEmpty()
+                            rebuildPanel()
+                        }
+                        override fun afterTextChanged(s: android.text.Editable?) = Unit
+                    })
+                }
+                list.addView(search, LinearLayout.LayoutParams(-1, dp(42)).apply {
+                    bottomMargin = dp(8)
+                })
+
+                val query = moduleSearchQuery.trim().lowercase()
+                val modules = ModuleRegistry.all.filter { module ->
+                    query.isBlank() ||
+                        module.title.lowercase().contains(query) ||
+                        module.id.lowercase().contains(query) ||
+                        module.category.lowercase().contains(query) ||
+                        module.description.lowercase().contains(query)
+                }
+
+                if (modules.isEmpty()) {
+                    addActionRow(list, "No matching modules", "Try a title, category, or module ID.")
+                } else {
+                    addModuleGrid(list, modules)
+                }
             }
             "HUD" -> {
                 addSection(list, "HUD & VISUALS", "Information and presentation helpers.")
