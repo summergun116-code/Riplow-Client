@@ -24,6 +24,7 @@ import com.riplow.client.modules.ModuleCapabilities
 import com.riplow.client.modules.ModuleDefinition
 import com.riplow.client.modules.ModuleManager
 import com.riplow.client.modules.ModuleRegistry
+import com.riplow.client.modules.ModuleRuntime
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
