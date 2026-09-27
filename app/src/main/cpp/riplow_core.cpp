@@ -46,6 +46,16 @@ Java_com_riplow_client_NativeBridge_nativeSetModuleNative(JNIEnv* env, jobject, 
     return riplow::modules().set_enabled(module_id, enabled == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_riplow_client_NativeBridge_nativeSamplePingNative(JNIEnv*, jobject, jdouble ping_ms) {
+    riplow::network().sample_ping(static_cast<double>(ping_ms));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_riplow_client_NativeBridge_nativeRecordPacketLossNative(JNIEnv*, jobject, jdouble percent) {
+    riplow::network().record_packet_loss(static_cast<double>(percent));
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_riplow_client_NativeBridge_nativeDiagnosticsNative(JNIEnv* env, jobject) {
     const auto frame = riplow::performance().metrics();
