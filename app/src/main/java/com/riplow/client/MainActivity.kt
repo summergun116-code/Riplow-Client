@@ -41,12 +41,22 @@ class MainActivity : AppCompatActivity() {
     private var launchOverlay: View? = null
     private var loadingDetail: TextView? = null
     private var telemetryView: TextView? = null
+    private var relayStatusView: TextView? = null
     private val telemetryHandler = Handler(Looper.getMainLooper())
+    private val relayHandler = Handler(Looper.getMainLooper())
     private val telemetryRunnable = object : Runnable {
         override fun run() {
             val view = telemetryView ?: return
             view.text = runtimeTelemetry()
             telemetryHandler.postDelayed(this, 1000L)
+        }
+    }
+
+    private val relayRunnable = object : Runnable {
+        override fun run() {
+            val view = relayStatusView ?: return
+            view.text = RelayRuntime.summary()
+            relayHandler.postDelayed(this, 1000L)
         }
     }
 
@@ -95,7 +105,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPage(page: Page) {
         telemetryHandler.removeCallbacks(telemetryRunnable)
+        relayHandler.removeCallbacks(relayRunnable)
         telemetryView = null
+        relayStatusView = null
         pageTitle.text = when (page) {
             Page.HOME -> "Home"
             Page.MODULES -> "Modules"
@@ -166,14 +178,20 @@ class MainActivity : AppCompatActivity() {
         featureRow.addView(infoCard(
             "OVERHEAD",
             "App-first",
-            "No persistent overlay service, notification loop or always-running client process."
+            "Riplow stays idle until you launch Minecraft or explicitly start a relay."
         ), weightParams(1f))
         pageContainer.addView(featureRow, LinearLayout.LayoutParams(-1, -2))
 
         val core = card()
         addEyebrow(core, "NATIVE CORE")
         addTitle(core, null, "Runtime health")
-        addBody(core, null, NativeBridge.loadStatus() + "\nRenderer adapter: " + NativeBridge.renderStatus())
+        addBody(
+            core,
+            null,
+            NativeBridge.loadStatus() +
+                "\nRenderer adapter: " + NativeBridge.renderStatus() +
+                "\n" + MinecraftCompatibility.bridgeState(this)
+        )
         pageContainer.addView(core)
 
         val note = card()
@@ -349,8 +367,84 @@ class MainActivity : AppCompatActivity() {
         val diagnostics = card()
         addEyebrow(diagnostics, "RELAY STATUS")
         addTitle(diagnostics, null, "Live transport")
-        addBody(diagnostics, null, RelayRuntime.summary())
+        relayStatusView = addBody(diagnostics, null, RelayRuntime.summary())
         pageContainer.addView(diagnostics)
+        relayHandler.post(relayRunnable)
+
+        val probe = card()
+        addEyebrow(probe, "SERVER PROBE")
+        addTitle(probe, null, "Bedrock server status")
+
+        val probeHost = EditText(this).apply {
+            hint = "Server host"
+            isSingleLine = true
+            textSize = 13f
+            setText(prefs.getString("probe_host", ""))
+        }
+        probe.addView(probeHost, buttonParams())
+
+        val probePort = EditText(this).apply {
+            hint = "Port"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            isSingleLine = true
+            textSize = 13f
+            setText(prefs.getInt("probe_port", 19132).toString())
+        }
+        probe.addView(probePort, buttonParams())
+
+        val probeResult = addBody(probe, null, "Ready")
+        val probeButton = Button(this).apply {
+            text = "PROBE SERVER"
+            isAllCaps = false
+            setOnClickListener {
+                val targetHost = probeHost.text.toString().trim()
+                val targetPort = probePort.text.toString().toIntOrNull() ?: 19132
+                if (targetHost.isBlank() || targetPort !in 1..65535) {
+                    probeResult.text = "Enter a valid server host and port"
+                    return@setOnClickListener
+                }
+
+                probeResult.text = "Probing…"
+                isEnabled = false
+                Thread({
+                    val result = com.riplow.client.modules.BedrockServerProbe.probe(targetHost, targetPort)
+                    runOnUiThread {
+                        isEnabled = true
+                        prefs.edit()
+                            .putString("probe_host", targetHost)
+                            .putInt("probe_port", targetPort)
+                            .apply()
+
+                        if (result.reachable && result.info != null) {
+                            NativeBridge.samplePing(result.elapsedMs.toDouble())
+                            NativeBridge.recordPacketLoss(0.0)
+                            val info = result.info
+                            probeResult.text = buildString {
+                                append("Online • ")
+                                append(result.elapsedMs)
+                                append(" ms")
+                                append("\n")
+                                append(info.motd)
+                                append("\n")
+                                append(info.players ?: "?")
+                                append("/")
+                                append(info.maxPlayers ?: "?")
+                                append(" players")
+                                append("\nProtocol ")
+                                append(info.protocol ?: "?")
+                                append(" • ")
+                                append(info.versionName ?: "unknown")
+                            }
+                        } else {
+                            NativeBridge.recordPacketLoss(100.0)
+                            probeResult.text = result.error ?: "Server unreachable"
+                        }
+                    }
+                }, "Riplow-Server-Probe").start()
+            }
+        }
+        probe.addView(probeButton, buttonParams())
+        pageContainer.addView(probe)
 
         val native = card()
         addEyebrow(native, "NATIVE TELEMETRY")
@@ -430,6 +524,13 @@ class MainActivity : AppCompatActivity() {
         })
 
         if (availability == ModuleAvailability.READY) {
+            card.addView(TextView(this).apply {
+                text = ModuleRuntime.status(this@MainActivity, prefs, module)
+                textSize = 11f
+                setTextColor(getColor(R.color.riplow_secondary))
+                setPadding(0, dp(6), 0, dp(4))
+            })
+
             card.addView(Button(this).apply {
                 text = if (ModuleManager.isEnabled(prefs, module.id)) "Disable" else "Enable"
                 isAllCaps = false
@@ -620,7 +721,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         telemetryHandler.removeCallbacks(telemetryRunnable)
+        relayHandler.removeCallbacks(relayRunnable)
         telemetryView = null
+        relayStatusView = null
         super.onDestroy()
     }
 
