@@ -56,6 +56,14 @@ object NativeBridge {
     fun nativeSetModule(id: String, enabled: Boolean): Boolean =
         if (!loaded) false else runCatching { nativeSetModuleNative(id, enabled) }.getOrDefault(false)
 
+    fun samplePing(pingMs: Double) {
+        if (loaded) runCatching { nativeSamplePingNative(pingMs) }
+    }
+
+    fun recordPacketLoss(percent: Double) {
+        if (loaded) runCatching { nativeRecordPacketLossNative(percent) }
+    }
+
     private external fun nativeVersion(): String
     private external fun nativeModuleSummaryNative(): String
     private external fun nativeDiagnosticsNative(): String
@@ -66,4 +74,6 @@ object NativeBridge {
     private external fun nativePushTouchNative(action: Int, x: Float, y: Float, pressure: Float): Boolean
     private external fun nativeToggleModuleNative(id: String): Boolean
     private external fun nativeSetModuleNative(id: String, enabled: Boolean): Boolean
+    private external fun nativeSamplePingNative(pingMs: Double)
+    private external fun nativeRecordPacketLossNative(percent: Double)
 }
