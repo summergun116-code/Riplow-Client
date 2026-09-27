@@ -194,15 +194,15 @@ object ModuleRegistry {
         ModuleDefinition("ping_spoof", "Ping Spoof", "Network")
     )
 
-    val gameBridgeIds = all
-        .filter { it.category != "Performance" && it.category != "Client" }
-        .filterNot { nativeIds.contains(it.id) }
-        .mapTo(mutableSetOf()) { it.id }
-
     val nativeIds = setOf(
         "ping", "network_diagnostics", "jitter_monitor", "packet_loss",
         "connection_status"
     )
+
+    val gameBridgeIds = all
+        .filter { it.category != "Performance" && it.category != "Client" }
+        .filterNot { nativeIds.contains(it.id) }
+        .mapTo(mutableSetOf()) { it.id }
 
     fun requiresGameBridge(id: String): Boolean = gameBridgeIds.contains(id)
     fun usesNativeTelemetry(id: String): Boolean = nativeIds.contains(id)
