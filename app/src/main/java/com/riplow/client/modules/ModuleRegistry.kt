@@ -196,6 +196,7 @@ object ModuleRegistry {
 
     val gameBridgeIds = all
         .filter { it.category != "Performance" && it.category != "Client" }
+        .filterNot { nativeIds.contains(it.id) }
         .mapTo(mutableSetOf()) { it.id }
 
     val nativeIds = setOf(
