@@ -3,6 +3,7 @@ package com.riplow.client
 import android.app.ActivityManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         private const val MINECRAFT_PACKAGE = "com.mojang.minecraftpe"
         private const val REQUEST_EXPORT_PROFILE = 4101
         private const val REQUEST_IMPORT_PROFILE = 4102
+        private const val REQUEST_IMPORT_MINECRAFT_CONTENT = 4103
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -226,27 +228,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun buildPacksPage() {
-        addWorkspace(
-            "PACK WORKSPACE",
-            "Bedrock pack profiles",
-            "Riplow keeps resource packs and behavior packs explicitly Minecraft-focused, not as generic app extensions.",
-            "Available",
-            "Pack integration"
-        )
-        addWorkspace(
-            "ADD-ONS",
-            "Behavior-pack workspace",
-            "The app does not silently modify the game. A compatible content bridge or Android file-access flow is required before real import/switch actions are enabled.",
-            "Bridge required",
-            "Integration state"
-        )
-        addWorkspace(
-            "WORLDS",
-            "World profiles and backups",
-            "Local organization for Minecraft worlds and backups. No automatic background copying.",
-            "Planned",
-            "Manual workflow"
-        )
+        val card = card()
+        addEyebrow(card, "BEDROCK CONTENT")
+        addTitle(card, null, "Import Minecraft content")
+        addBody(card, null, "Pick a .mcpack, .mcaddon or .mcworld file and hand it to your installed Minecraft app.")
+
+        card.addView(Button(this).apply {
+            text = "IMPORT PACK / ADD-ON"
+            isAllCaps = false
+            setOnClickListener { pickMinecraftContent() }
+        }, buttonParams())
+
+        card.addView(Button(this).apply {
+            text = "IMPORT WORLD"
+            isAllCaps = false
+            setOnClickListener { pickMinecraftContent() }
+        }, buttonParams())
+
+        pageContainer.addView(card)
+
+        val profiles = card()
+        addEyebrow(profiles, "CONTENT PROFILES")
+        addTitle(profiles, null, "Local organization")
+        addBody(profiles, null, "Use the profile system in Settings to save Riplow module configuration. Minecraft content is imported through Android's document flow so the game remains the owner of its data.")
+        pageContainer.addView(profiles)
+    }
+
+    private fun pickMinecraftContent() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_MINECRAFT_CONTENT)
+    }
+
+    private fun openMinecraftContent(uri: Uri) {
+        val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+        val direct = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mime)
+            setPackage(MINECRAFT_PACKAGE)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            startActivity(direct)
+            status.text = "Minecraft content sent to the installed game"
+        } catch (_: ActivityNotFoundException) {
+            val fallback = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mime)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            runCatching {
+                startActivity(Intent.createChooser(fallback, "Open with Minecraft"))
+                status.text = "Choose Minecraft to import the content"
+            }.onFailure {
+                status.text = "No app can open that Minecraft content file"
+            }
+        }
     }
 
     private fun buildPerformancePage() {
@@ -630,6 +668,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     showPage(Page.SETTINGS)
                 }
+                REQUEST_IMPORT_MINECRAFT_CONTENT -> openMinecraftContent(uri)
             }
         } catch (_: Throwable) {
             status.text = "Profile operation failed"
