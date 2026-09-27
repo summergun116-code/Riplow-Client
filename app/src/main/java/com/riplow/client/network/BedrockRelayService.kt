@@ -131,8 +131,20 @@ class BedrockRelayService : Service() {
 
         startForeground(42, notification("127.0.0.1:$localPort → $host:$remotePort"))
 
-        stopRequested.set(false)
+        if (RelayRuntime.active &&
+            RelayRuntime.remoteHost == host &&
+            RelayRuntime.remotePort == remotePort &&
+            RelayRuntime.localPort == localPort
+        ) {
+            return START_NOT_STICKY
+        }
+
+        stopRequested.set(true)
         worker?.interrupt()
+        socket?.close()
+        runCatching { worker?.join(500) }
+
+        stopRequested.set(false)
         RelayRuntime.reset(host, remotePort, localPort)
         RelayRuntime.active = true
 
@@ -192,6 +204,7 @@ class BedrockRelayService : Service() {
         stopRequested.set(true)
         worker?.interrupt()
         socket?.close()
+        runCatching { worker?.join(500) }
         worker = null
         socket = null
         RelayRuntime.active = false
