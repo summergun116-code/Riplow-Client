@@ -7,7 +7,7 @@ object NativeBridge {
         System.loadLibrary("riplow_core")
         true
     } catch (error: Throwable) {
-        loadError = error.javaClass.simpleName + (error.message?.let { ": \$it" } ?: "")
+        loadError = error.javaClass.simpleName + (error.message?.let { ": " + it } ?: "")
         false
     }
 
