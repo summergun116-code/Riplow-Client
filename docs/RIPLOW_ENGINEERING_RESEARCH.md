@@ -1,4 +1,4 @@
-# Riplow Engineering Research: FPS, Frame Generation, Replay Studio, and Glass UI
+# Riplow Performance, Replay, and Accounts Plan
 
 **Status:** Research/architecture proposal  
 **Scope:** Existing Riplow Client repository; Android companion/launcher for Minecraft Bedrock/MCPE  
@@ -288,6 +288,24 @@ Implementation constraints:
 3. Prototype Replay v1 capture and clip management.
 4. Build the Accounts screen and verify the supported sign-in/switch path before advertising one-tap switching.
 5. Research a Bedrock-side renderer adapter for real culling and a replay-state adapter. Treat these as integration projects, not toggles that can be implemented from the launcher alone.
+
+### 4. Simple names in the app
+
+Keep the internal code as technical as needed, but keep the screen labels plain. Do not expose names like "engine", "core", "pipeline", or "orchestrator" as user-facing sections.
+
+Suggested labels:
+- **FPS** — device stats, performance profiles, benchmarks, thermal warnings.
+- **Entity Culling** — skip drawing entities proven not visible; requires game-side renderer integration.
+- **Block Culling** — avoid drawing hidden block faces/sections where the Bedrock renderer exposes a safe hook.
+- **Animated Textures** — investigate updating only visible animated textures when supported by a real renderer adapter.
+- **Particles** — an in-game setting shortcut or integration-backed reduction; never claim an external toggle changes Minecraft particles.
+- **Packs** — inspect, compare, and switch imported resource packs.
+- **Replay** — instant clips, timeline, bookmarks, trimming, and exports.
+- **Accounts** — saved account cards, active account, and the shortest verified official switch flow.
+- **Network** — ping, jitter, packet loss where measurable, and connection notes.
+- **Settings** — controls, theme, and profiles.
+
+Use small, honest status text: **Ready**, **Needs game support**, **Not supported**, or **Permission needed**. A feature that is waiting for Bedrock renderer access should still be shown as planned/research, not as a working ON/OFF switch.
 
 ### Design references
 
