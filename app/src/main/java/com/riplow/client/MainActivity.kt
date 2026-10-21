@@ -28,7 +28,7 @@ import com.riplow.client.modules.ModuleRuntime
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-    private enum class Page { HOME, MODULES, PACKS, PERFORMANCE, NETWORK, SETTINGS }
+    private enum class Page { HOME, MODULES, PACKS, PERFORMANCE, NETWORK, SETTINGS, REPLAY, ACCOUNTS }
 
     private val handler = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
@@ -95,9 +95,11 @@ class MainActivity : AppCompatActivity() {
     private fun bindNavigation() {
         val mapping = listOf(
             R.id.nav_home to Page.HOME,
-            R.id.nav_modules to Page.MODULES,
-            R.id.nav_packs to Page.PACKS,
             R.id.nav_performance to Page.PERFORMANCE,
+            R.id.nav_replay to Page.REPLAY,
+            R.id.nav_accounts to Page.ACCOUNTS,
+            R.id.nav_packs to Page.PACKS,
+            R.id.nav_modules to Page.MODULES,
             R.id.nav_network to Page.NETWORK,
             R.id.nav_settings to Page.SETTINGS
         )
@@ -118,25 +120,34 @@ class MainActivity : AppCompatActivity() {
             Page.PERFORMANCE -> "Performance"
             Page.NETWORK -> "Network"
             Page.SETTINGS -> "Settings"
+            Page.REPLAY -> "Replay"
+            Page.ACCOUNTS -> "Accounts"
         }
         pageSubtitle.text = when (page) {
             Page.HOME -> "Launch Minecraft and manage your client tools from one place."
             Page.MODULES -> "Minecraft modules and utilities."
             Page.PACKS -> "Resource packs, add-ons, worlds and profiles."
             Page.PERFORMANCE -> "Device-side tuning for Riplow, with honest Minecraft limits."
-            Page.NETWORK -> "Bedrock connection visibility: latency, jitter and session diagnostics."
-            Page.SETTINGS -> "Simple local preferences. No background client service."
+            Page.NETWORK -> "Ping, jitter and connection diagnostics."
+            Page.SETTINGS -> "Appearance, profiles and local preferences."
+            Page.REPLAY -> "Record, trim and organize your Minecraft moments."
+            Page.ACCOUNTS -> "Account switching with a clear view of what is supported."
         }
 
         listOf(
             Page.HOME to R.id.nav_home,
-            Page.MODULES to R.id.nav_modules,
-            Page.PACKS to R.id.nav_packs,
             Page.PERFORMANCE to R.id.nav_performance,
+            Page.REPLAY to R.id.nav_replay,
+            Page.ACCOUNTS to R.id.nav_accounts,
+            Page.PACKS to R.id.nav_packs,
+            Page.MODULES to R.id.nav_modules,
             Page.NETWORK to R.id.nav_network,
             Page.SETTINGS to R.id.nav_settings
         ).forEach { (item, id) ->
-            findViewById<Button>(id).alpha = if (item == page) 1f else 0.62f
+            findViewById<Button>(id).apply {
+                alpha = if (item == page) 1f else 0.82f
+                setBackgroundResource(if (item == page) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+            }
         }
 
         pageContainer.removeAllViews()
@@ -149,58 +160,116 @@ class MainActivity : AppCompatActivity() {
             Page.PERFORMANCE -> buildPerformancePage()
             Page.NETWORK -> buildNetworkPage()
             Page.SETTINGS -> buildSettingsPage()
+            Page.REPLAY -> buildReplayPage()
+            Page.ACCOUNTS -> buildAccountsPage()
         }
         (pageContainer.parent as? ScrollView)?.scrollTo(0, 0)
     }
 
     private fun buildHomePage() {
-        val minecraftCard = card()
-        addEyebrow(minecraftCard, "MINECRAFT")
-        minecraftVersion = addTitle(minecraftCard, null, "Minecraft")
-        minecraftState = addBody(minecraftCard, null, "Checking installation…")
-        val play = Button(this).apply {
-            text = "PLAY MINECRAFT"
+        val hero = card()
+        addEyebrow(hero, "MINECRAFT BEDROCK")
+        addTitle(hero, null, "Your Minecraft, refined.")
+        minecraftVersion = addBody(hero, null, "Checking Minecraft…")
+        minecraftState = addBody(hero, null, "Launch your game and keep your tools in one place.")
+        val launchRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        launchRow.addView(Button(this).apply {
+            text = "Launch Minecraft"
             isAllCaps = false
-            textSize = 13f
             setOnClickListener { launchMinecraft() }
-        }
-        minecraftCard.addView(play, buttonParams())
-        pageContainer.addView(minecraftCard)
+        }, weightParams(1f))
+        launchRow.addView(Button(this).apply {
+            text = "Open modules"
+            isAllCaps = false
+            setOnClickListener { showPage(Page.MODULES) }
+        }, weightParams(1f))
+        hero.addView(launchRow, LinearLayout.LayoutParams(-1, -2).apply {
+            setMargins(0, dp(12), 0, 0)
+        })
+        pageContainer.addView(hero)
 
-        val featureRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        featureRow.addView(infoCard(
-            "MODULES",
-            ModuleRegistry.all.size.toString() + " focused tools",
-            "HUD, visual, performance, network and gameplay modules."
+        val performanceRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        performanceRow.addView(infoCard(
+            "FPS",
+            "Performance",
+            "Device stats and lightweight profiles."
         ), weightParams(1f))
-        featureRow.addView(infoCard(
-            "MODE",
-            "Companion",
-            "Riplow launches the Minecraft you already own. It does not inject a built-in game menu."
+        performanceRow.addView(infoCard(
+            "REPLAY",
+            "Replay Studio",
+            "Recording and clip tools."
         ), weightParams(1f))
-        featureRow.addView(infoCard(
-            "OVERHEAD",
-            "App-first",
-            "Riplow stays idle until you launch Minecraft or explicitly start a relay."
-        ), weightParams(1f))
-        pageContainer.addView(featureRow, LinearLayout.LayoutParams(-1, -2))
+        pageContainer.addView(performanceRow, LinearLayout.LayoutParams(-1, -2))
 
-        val core = card()
-        addEyebrow(core, "NATIVE CORE")
-        addTitle(core, null, "Runtime health")
-        addBody(
-            core,
-            null,
-            NativeBridge.loadStatus() +
-                "\nRenderer adapter: " + NativeBridge.renderStatus() +
-                "\n" + MinecraftCompatibility.bridgeState(this)
-        )
-        pageContainer.addView(core)
+        val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        toolsRow.addView(infoCard(
+            "ACCOUNTS",
+            "Quick switch",
+            "Account linking is not active yet."
+        ), weightParams(1f))
+        toolsRow.addView(infoCard(
+            "PACKS",
+            "Pack manager",
+            "Import .mcpack, .mcaddon and .mcworld files."
+        ), weightParams(1f))
+        pageContainer.addView(toolsRow, LinearLayout.LayoutParams(-1, -2))
+
+        val runtime = card()
+        addEyebrow(runtime, "DEVICE STATUS")
+        addTitle(runtime, null, "Live overview")
+        telemetryView = addBody(runtime, null, runtimeTelemetry())
+        pageContainer.addView(runtime)
+        telemetryHandler.post(telemetryRunnable)
 
         val note = card()
-        addEyebrow(note, "IMPORTANT")
-        addBody(note, null, "The renderer adapter is shipped as a guarded integration layer. The normal companion APK keeps process hooks disabled, so it cannot destabilize the Minecraft app or pretend it has renderer access it does not actually have.")
+        addEyebrow(note, "BUILT FOR BEDROCK")
+        addTitle(note, null, "Real features, honest status")
+        addBody(note, null, "Riplow can launch installed Minecraft, manage local profiles, import content and inspect device/network data. Features such as renderer-level entity culling and 3D replay need a compatible Bedrock integration; they will not be shown as working before they are.")
         pageContainer.addView(note)
+    }
+
+    private fun buildReplayPage() {
+        val hero = card()
+        addEyebrow(hero, "REPLAY STUDIO")
+        addTitle(hero, null, "Keep the moments worth saving.")
+        addBody(hero, null, "The first version is designed around screen recording, clip trimming, bookmarks and export. Riplow will request Android's screen-capture permission when recording is implemented.")
+        pageContainer.addView(hero)
+
+        val record = card()
+        addEyebrow(record, "RECORDING")
+        addTitle(record, null, "Screen capture")
+        addBody(record, null, "Planned next: start and stop a recording, choose quality, and save MP4 clips locally. No capture is running in this build.")
+        addWorkspace("STATUS", "Screen recorder", "Uses Android's visible screen-capture permission. Recording will never run silently.", "Planned", "Replay")
+        val timeline = card()
+        addEyebrow(timeline, "INSTANT REPLAY")
+        addTitle(timeline, null, "Save the last 30–120 seconds")
+        addBody(timeline, null, "A rolling clip buffer, bookmarks and fast export are planned. True 3D camera playback needs recorded Bedrock game state and is a separate integration.")
+        pageContainer.addView(timeline)
+    }
+
+    private fun buildAccountsPage() {
+        val hero = card()
+        addEyebrow(hero, "ACCOUNT MANAGER")
+        addTitle(hero, null, "Switch without the long detour.")
+        addBody(hero, null, "Riplow's account manager will use the official Microsoft sign-in flow. This build cannot yet change the account active inside Minecraft, so it will not fake a successful account swap.")
+        hero.addView(Button(this).apply {
+            text = "Open Minecraft"
+            isAllCaps = false
+            setOnClickListener { launchMinecraft() }
+        }, buttonParams())
+        pageContainer.addView(hero)
+
+        val account = card()
+        addEyebrow(account, "CURRENT STATUS")
+        addTitle(account, null, "Minecraft account")
+        addBody(account, null, "Managed by Minecraft • account linking not connected")
+        pageContainer.addView(account)
+
+        val next = card()
+        addEyebrow(next, "PLANNED")
+        addTitle(next, null, "Saved accounts")
+        addBody(next, null, "The target flow is simple: add an account through Microsoft, see the signed-in profiles, tap one, then launch Minecraft if the supported game sign-in flow allows it. Tokens will not be copied between apps.")
+        pageContainer.addView(next)
     }
 
     private fun buildModulesPage() {
