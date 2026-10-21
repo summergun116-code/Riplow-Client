@@ -146,8 +146,10 @@ class MainActivity : AppCompatActivity() {
             Page.SETTINGS to R.id.nav_settings
         ).forEach { (item, id) ->
             findViewById<Button>(id).apply {
-                alpha = if (item == page) 1f else 0.82f
-                setBackgroundResource(if (item == page) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                val selected = item == page
+                alpha = if (selected) 1f else 0.82f
+                setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
             }
         }
 
