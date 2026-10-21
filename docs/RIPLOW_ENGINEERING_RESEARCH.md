@@ -228,3 +228,71 @@ CI should test Kotlin capability mapping, native statistics, import validation, 
 - Minecraft Bedrock resource packs: https://learn.microsoft.com/en-us/minecraft/creator/documents/resourcepack
 - ReplayMod documentation (Java/Fabric/Forge): https://www.replaymod.com/docs/
 - Android NDK and CMake: https://developer.android.com/ndk/guides/cmake
+
+
+## New product requirements: deeper optimization, Replay Studio, and accounts
+
+These are first-class Riplow goals, not decorative module tiles. Keep the names simple in the UI: **FPS**, **Replay**, **Accounts**, **Packs**, **Network**, **Settings**.
+
+### 1. More Minecraft-specific optimization
+
+Use Sodium and Entity Culling as *design references*, not code that can be copied into the Bedrock companion. Sodium describes block-face culling, entity visibility culling, fog occlusion, and updating only visible animated textures. Entity Culling goes further by testing line-of-sight for hidden entities and block entities. Those ideas are valuable, but their Java renderer hooks do not become Bedrock features automatically.
+
+Proposed optimization set, in order of feasibility:
+
+- **FPS Advisor:** recommend tested Bedrock settings based on device tier, thermal state, available memory, and the user's goal (Performance / Balanced / Battery).
+- **Pack Optimizer:** inspect an imported resource pack, report large textures/animations and suspicious asset sizes, and offer a previewable lower-resolution copy. Explain visual tradeoffs and keep the original untouched.
+- **Texture and animation guidance:** identify heavy texture dimensions and animated textures; do not claim to disable game animation work from outside Minecraft.
+- **Culling research:** investigate a version-specific Bedrock-side integration for block-face culling, entity culling, block-entity culling, and occlusion/fog culling. These need renderer visibility data or game integration; a separate Android companion or ordinary resource pack cannot simply add Sodium's renderer hooks.
+- **Safe culling controls:** where a legitimate in-game adapter exists, provide separate toggles, an entity/block-entity allowlist, visual-artifact warnings, and an instant off switch. Never hide gameplay-critical information silently.
+- **Honest benchmarks:** compare before/after under the same Minecraft version, world, camera, packs, render distance, and thermal conditions. Report measured device metrics separately from true Minecraft frame times.
+
+Keep **render culling** separate from **tick/AI optimization**. Not drawing something is not the same as stopping its simulation, and a companion app must not claim it reduces Minecraft entity ticks unless an integration actually does so. Do not label device refresh rate, Android process metrics, or Riplow UI FPS as Minecraft FPS.
+
+### 2. Replay Studio — more than a screen recorder
+
+Build Replay in layers so the useful tools work even before a Bedrock game-state adapter exists:
+
+**Replay v1 (standalone Android companion):**
+- User-consented capture through Android screen recording permissions.
+- Rolling short replay buffer where platform behavior, memory, and sustained recording tests permit it.
+- Save last 15/30/60 seconds, manual start/stop, bookmarks, clip naming, trimming, and MP4 export.
+- Session list, thumbnails, storage estimates, capture resolution/FPS controls that reflect real device support, and clear microphone/system-audio permission status.
+- Lightweight game-session notes and optional device telemetry overlay, clearly marked as device telemetry unless actual game metrics are available.
+
+**Replay v2 (editing):**
+- Timeline with split/trim, multiple bookmarks, speed changes, freeze frames, crop, and export presets.
+- Saved camera-path/keyframe editor UI can be designed early, but must remain labeled as a preview until there is a way to drive a Bedrock replay camera.
+- Stable file recovery for interrupted recordings and storage-space checks before capture.
+
+**Replay v3 (true replay):**
+- Record world/player/entity state and timestamps from a compatible Bedrock integration, then reconstruct a timeline that can be scrubbed independently of the original screen recording.
+- Add camera paths, smooth keyframes, orbit/follow camera, slow motion, event markers, and final render/export only when the game adapter supplies the needed state.
+- A video recording alone only captures pixels: it cannot create free-camera movement, restore earlier world states, or let users move the camera after the match. ReplayMod's camera paths and rendering are a useful experience reference, but its mod is for Java Edition and requires a game-side mod.
+
+### 3. Accounts — click-and-swap goal
+
+The target UX is a single **Accounts** page with saved account cards, a clear active-account indicator, and the fewest possible steps to switch. Never ask users to save Microsoft passwords inside Riplow.
+
+Implementation constraints:
+- Use official sign-in/authorization flows and store only the minimum account/session data required by a supported integration; protect local secrets with Android's secure storage facilities.
+- Do not read Minecraft's private files, scrape its private authentication database, copy session tokens, or inject undocumented launch arguments.
+- The installed Bedrock app owns its Microsoft/Xbox sign-in state. The official mobile recovery/switch flow currently directs users through Minecraft's own Settings > Account sign-out and sign-in process. A standalone companion must not promise silent, one-click account swapping until a documented, supported auth handoff or Bedrock integration proves it can be done.
+- **Practical staged target:** first build saved account labels, status/last-used tracking only where verifiable, a guided quick-switch screen, and a direct launch back into Minecraft. Then investigate whether an official supported identity handoff exists. If it does not, make the switch flow shorter and clearer without pretending it is one tap.
+- Keep account ownership and security visible: account removal, sign-out guidance, no password storage, no hidden authentication, and clear handling of expired/revoked sessions.
+
+### Recommended delivery order
+
+1. Make existing FPS telemetry accurate and add tested Android thermal/memory/device metrics.
+2. Ship Pack inspection and performance recommendations.
+3. Prototype Replay v1 capture and clip management.
+4. Build the Accounts screen and verify the supported sign-in/switch path before advertising one-tap switching.
+5. Research a Bedrock-side renderer adapter for real culling and a replay-state adapter. Treat these as integration projects, not toggles that can be implemented from the launcher alone.
+
+### Design references
+
+- Sodium optimization options: https://github.com/CaffeineMC/sodium
+- Entity Culling design and visibility behavior: https://github.com/tr7zw/EntityCulling
+- ReplayMod camera paths and rendering documentation: https://www.replaymod.com/docs/
+- Minecraft's current account sign-out/sign-in help: https://help.minecraft.net/hc/en-us/articles/360045828292-Sign-Out-of-Minecraft
+- Android screen-capture APIs: https://developer.android.com/media/grow/media-projection
