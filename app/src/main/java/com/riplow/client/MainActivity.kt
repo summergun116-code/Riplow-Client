@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_EXPORT_PROFILE = 4101
         private const val REQUEST_IMPORT_PROFILE = 4102
         private const val REQUEST_IMPORT_MINECRAFT_CONTENT = 4103
+        private const val REQUEST_OPEN_CLIP = 4104
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -189,28 +190,32 @@ class MainActivity : AppCompatActivity() {
         pageContainer.addView(hero)
 
         val performanceRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        performanceRow.addView(infoCard(
+        performanceRow.addView(quickCard(
             "FPS",
             "Performance",
-            "Device stats and lightweight profiles."
+            "Device stats and lightweight profiles.",
+            Page.PERFORMANCE
         ), weightParams(1f))
-        performanceRow.addView(infoCard(
+        performanceRow.addView(quickCard(
             "REPLAY",
             "Replay Studio",
-            "Recording and clip tools."
+            "Recording and clip tools.",
+            Page.REPLAY
         ), weightParams(1f))
         pageContainer.addView(performanceRow, LinearLayout.LayoutParams(-1, -2))
 
         val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        toolsRow.addView(infoCard(
+        toolsRow.addView(quickCard(
             "ACCOUNTS",
             "Quick switch",
-            "Account linking is not active yet."
+            "Account linking is not active yet.",
+            Page.ACCOUNTS
         ), weightParams(1f))
-        toolsRow.addView(infoCard(
+        toolsRow.addView(quickCard(
             "PACKS",
             "Pack manager",
-            "Import .mcpack, .mcaddon and .mcworld files."
+            "Import .mcpack, .mcaddon and .mcworld files.",
+            Page.PACKS
         ), weightParams(1f))
         pageContainer.addView(toolsRow, LinearLayout.LayoutParams(-1, -2))
 
@@ -245,6 +250,11 @@ class MainActivity : AppCompatActivity() {
             setTextColor(getColor(R.color.riplow_secondary))
             setPadding(0, dp(8), 0, 0)
         })
+        record.addView(Button(this).apply {
+            text = "Open saved clip"
+            isAllCaps = false
+            setOnClickListener { chooseSavedClip() }
+        }, buttonParams())
         pageContainer.addView(record)
         val timeline = card()
         addEyebrow(timeline, "INSTANT REPLAY")
@@ -336,6 +346,28 @@ class MainActivity : AppCompatActivity() {
             type = "*/*"
         }
         startActivityForResult(intent, REQUEST_IMPORT_MINECRAFT_CONTENT)
+    }
+
+    private fun chooseSavedClip() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "video/*"
+        }
+        startActivityForResult(intent, REQUEST_OPEN_CLIP)
+    }
+
+    private fun openSavedClip(uri: Uri) {
+        val mime = contentResolver.getType(uri) ?: "video/mp4"
+        val viewer = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            startActivity(Intent.createChooser(viewer, "Open replay clip"))
+            status.text = "Opening saved clip"
+        } catch (_: ActivityNotFoundException) {
+            status.text = "No video player can open this clip"
+        }
     }
 
     private fun openMinecraftContent(uri: Uri) {
@@ -745,6 +777,7 @@ class MainActivity : AppCompatActivity() {
                     showPage(Page.SETTINGS)
                 }
                 REQUEST_IMPORT_MINECRAFT_CONTENT -> openMinecraftContent(uri)
+                REQUEST_OPEN_CLIP -> openSavedClip(uri)
             }
         } catch (_: Throwable) {
             status.text = "Profile operation failed"
@@ -771,6 +804,14 @@ class MainActivity : AppCompatActivity() {
         addTitle(card, null, title)
         addBody(card, null, body)
         return card
+    }
+
+    private fun quickCard(eyebrow: String, title: String, body: String, page: Page): View {
+        return infoCard(eyebrow, title, body).apply {
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showPage(page) }
+        }
     }
 
     private fun card(): LinearLayout = LinearLayout(this).apply {
