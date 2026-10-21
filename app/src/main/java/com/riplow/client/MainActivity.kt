@@ -238,8 +238,14 @@ class MainActivity : AppCompatActivity() {
         val record = card()
         addEyebrow(record, "RECORDING")
         addTitle(record, null, "Screen capture")
-        addBody(record, null, "Planned next: start and stop a recording, choose quality, and save MP4 clips locally. No capture is running in this build.")
-        addWorkspace("STATUS", "Screen recorder", "Uses Android's visible screen-capture permission. Recording will never run silently.", "Planned", "Replay")
+        addBody(record, null, "Next up: start and stop a recording, choose quality, and save MP4 clips locally. No capture is running in this build.")
+        record.addView(TextView(this).apply {
+            text = "RECORDING  •  PLANNED"
+            textSize = 10f
+            setTextColor(getColor(R.color.riplow_secondary))
+            setPadding(0, dp(8), 0, 0)
+        })
+        pageContainer.addView(record)
         val timeline = card()
         addEyebrow(timeline, "INSTANT REPLAY")
         addTitle(timeline, null, "Save the last 30–120 seconds")
