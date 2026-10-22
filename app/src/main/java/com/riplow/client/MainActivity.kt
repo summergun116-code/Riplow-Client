@@ -28,7 +28,7 @@ import com.riplow.client.modules.ModuleRuntime
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-    private enum class Page { HOME, MODULES, PACKS, PERFORMANCE, NETWORK, SETTINGS }
+    private enum class Page { HOME, MODULES, PACKS, PERFORMANCE, NETWORK, SETTINGS, REPLAY, ACCOUNTS }
 
     private val handler = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("riplow_settings", MODE_PRIVATE) }
@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_EXPORT_PROFILE = 4101
         private const val REQUEST_IMPORT_PROFILE = 4102
         private const val REQUEST_IMPORT_MINECRAFT_CONTENT = 4103
+        private const val REQUEST_OPEN_CLIP = 4104
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,9 +96,11 @@ class MainActivity : AppCompatActivity() {
     private fun bindNavigation() {
         val mapping = listOf(
             R.id.nav_home to Page.HOME,
-            R.id.nav_modules to Page.MODULES,
-            R.id.nav_packs to Page.PACKS,
             R.id.nav_performance to Page.PERFORMANCE,
+            R.id.nav_replay to Page.REPLAY,
+            R.id.nav_accounts to Page.ACCOUNTS,
+            R.id.nav_packs to Page.PACKS,
+            R.id.nav_modules to Page.MODULES,
             R.id.nav_network to Page.NETWORK,
             R.id.nav_settings to Page.SETTINGS
         )
@@ -118,25 +121,36 @@ class MainActivity : AppCompatActivity() {
             Page.PERFORMANCE -> "Performance"
             Page.NETWORK -> "Network"
             Page.SETTINGS -> "Settings"
+            Page.REPLAY -> "Replay"
+            Page.ACCOUNTS -> "Accounts"
         }
         pageSubtitle.text = when (page) {
             Page.HOME -> "Launch Minecraft and manage your client tools from one place."
             Page.MODULES -> "Minecraft modules and utilities."
             Page.PACKS -> "Resource packs, add-ons, worlds and profiles."
             Page.PERFORMANCE -> "Device-side tuning for Riplow, with honest Minecraft limits."
-            Page.NETWORK -> "Bedrock connection visibility: latency, jitter and session diagnostics."
-            Page.SETTINGS -> "Simple local preferences. No background client service."
+            Page.NETWORK -> "Ping, jitter and connection diagnostics."
+            Page.SETTINGS -> "Appearance, profiles and local preferences."
+            Page.REPLAY -> "Record, trim and organize your Minecraft moments."
+            Page.ACCOUNTS -> "Account switching with a clear view of what is supported."
         }
 
         listOf(
             Page.HOME to R.id.nav_home,
-            Page.MODULES to R.id.nav_modules,
-            Page.PACKS to R.id.nav_packs,
             Page.PERFORMANCE to R.id.nav_performance,
+            Page.REPLAY to R.id.nav_replay,
+            Page.ACCOUNTS to R.id.nav_accounts,
+            Page.PACKS to R.id.nav_packs,
+            Page.MODULES to R.id.nav_modules,
             Page.NETWORK to R.id.nav_network,
             Page.SETTINGS to R.id.nav_settings
         ).forEach { (item, id) ->
-            findViewById<Button>(id).alpha = if (item == page) 1f else 0.62f
+            findViewById<Button>(id).apply {
+                val selected = item == page
+                alpha = if (selected) 1f else 0.82f
+                setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
+            }
         }
 
         pageContainer.removeAllViews()
@@ -149,83 +163,274 @@ class MainActivity : AppCompatActivity() {
             Page.PERFORMANCE -> buildPerformancePage()
             Page.NETWORK -> buildNetworkPage()
             Page.SETTINGS -> buildSettingsPage()
+            Page.REPLAY -> buildReplayPage()
+            Page.ACCOUNTS -> buildAccountsPage()
         }
         (pageContainer.parent as? ScrollView)?.scrollTo(0, 0)
     }
 
     private fun buildHomePage() {
-        val minecraftCard = card()
-        addEyebrow(minecraftCard, "MINECRAFT")
-        minecraftVersion = addTitle(minecraftCard, null, "Minecraft")
-        minecraftState = addBody(minecraftCard, null, "Checking installation…")
-        val play = Button(this).apply {
-            text = "PLAY MINECRAFT"
+        val hero = card()
+        addEyebrow(hero, "MINECRAFT BEDROCK")
+        addTitle(hero, null, "Your Minecraft, refined.")
+        minecraftVersion = addBody(hero, null, "Checking Minecraft…")
+        minecraftState = addBody(hero, null, "Launch your game and keep your tools in one place.")
+        val launchRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        launchRow.addView(Button(this).apply {
+            text = "Launch Minecraft"
             isAllCaps = false
-            textSize = 13f
             setOnClickListener { launchMinecraft() }
-        }
-        minecraftCard.addView(play, buttonParams())
-        pageContainer.addView(minecraftCard)
+        }, weightParams(1f))
+        launchRow.addView(Button(this).apply {
+            text = "Open modules"
+            isAllCaps = false
+            setOnClickListener { showPage(Page.MODULES) }
+        }, weightParams(1f))
+        hero.addView(launchRow, LinearLayout.LayoutParams(-1, -2).apply {
+            setMargins(0, dp(12), 0, 0)
+        })
+        pageContainer.addView(hero)
 
-        val featureRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        featureRow.addView(infoCard(
-            "MODULES",
-            ModuleRegistry.all.size.toString() + " focused tools",
-            "HUD, visual, performance, network and gameplay modules."
+        val performanceRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        performanceRow.addView(quickCard(
+            "FPS",
+            "Performance",
+            "Device stats and lightweight profiles.",
+            Page.PERFORMANCE
         ), weightParams(1f))
-        featureRow.addView(infoCard(
-            "MODE",
-            "Companion",
-            "Riplow launches the Minecraft you already own. It does not inject a built-in game menu."
+        performanceRow.addView(quickCard(
+            "REPLAY",
+            "Replay Studio",
+            "Recording and clip tools.",
+            Page.REPLAY
         ), weightParams(1f))
-        featureRow.addView(infoCard(
-            "OVERHEAD",
-            "App-first",
-            "Riplow stays idle until you launch Minecraft or explicitly start a relay."
-        ), weightParams(1f))
-        pageContainer.addView(featureRow, LinearLayout.LayoutParams(-1, -2))
+        pageContainer.addView(performanceRow, LinearLayout.LayoutParams(-1, -2))
 
-        val core = card()
-        addEyebrow(core, "NATIVE CORE")
-        addTitle(core, null, "Runtime health")
-        addBody(
-            core,
-            null,
-            NativeBridge.loadStatus() +
-                "\nRenderer adapter: " + NativeBridge.renderStatus() +
-                "\n" + MinecraftCompatibility.bridgeState(this)
-        )
-        pageContainer.addView(core)
+        val toolsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        toolsRow.addView(quickCard(
+            "ACCOUNTS",
+            "Quick switch",
+            "Account linking is not active yet.",
+            Page.ACCOUNTS
+        ), weightParams(1f))
+        toolsRow.addView(quickCard(
+            "PACKS",
+            "Pack manager",
+            "Import .mcpack, .mcaddon and .mcworld files.",
+            Page.PACKS
+        ), weightParams(1f))
+        pageContainer.addView(toolsRow, LinearLayout.LayoutParams(-1, -2))
+
+        val runtime = card()
+        addEyebrow(runtime, "DEVICE STATUS")
+        addTitle(runtime, null, "Live overview")
+        telemetryView = addBody(runtime, null, runtimeTelemetry())
+        pageContainer.addView(runtime)
+        telemetryHandler.post(telemetryRunnable)
 
         val note = card()
-        addEyebrow(note, "IMPORTANT")
-        addBody(note, null, "The renderer adapter is shipped as a guarded integration layer. The normal companion APK keeps process hooks disabled, so it cannot destabilize the Minecraft app or pretend it has renderer access it does not actually have.")
+        addEyebrow(note, "BUILT FOR BEDROCK")
+        addTitle(note, null, "Real features, honest status")
+        addBody(note, null, "Riplow can launch installed Minecraft, manage local profiles, import content and inspect device/network data. Features such as renderer-level entity culling and 3D replay need a compatible Bedrock integration; they will not be shown as working before they are.")
         pageContainer.addView(note)
     }
 
+    private fun buildReplayPage() {
+        val hero = card()
+        addEyebrow(hero, "REPLAY STUDIO")
+        addTitle(hero, null, "Keep the moments worth saving.")
+        addBody(hero, null, "The first version is designed around screen recording, clip trimming, bookmarks and export. Riplow will request Android's screen-capture permission when recording is implemented.")
+        pageContainer.addView(hero)
+
+        val record = card()
+        addEyebrow(record, "RECORDING")
+        addTitle(record, null, "Screen capture")
+        addBody(record, null, "Next up: start and stop a recording, choose quality, and save MP4 clips locally. No capture is running in this build.")
+        record.addView(TextView(this).apply {
+            text = "RECORDING  •  PLANNED"
+            textSize = 10f
+            setTextColor(getColor(R.color.riplow_secondary))
+            setPadding(0, dp(8), 0, 0)
+        })
+        record.addView(Button(this).apply {
+            text = "Open saved clip"
+            isAllCaps = false
+            setOnClickListener { chooseSavedClip() }
+        }, buttonParams())
+        pageContainer.addView(record)
+        val timeline = card()
+        addEyebrow(timeline, "INSTANT REPLAY")
+        addTitle(timeline, null, "Save the last 30–120 seconds")
+        addBody(timeline, null, "A rolling clip buffer, bookmarks and fast export are planned. True 3D camera playback needs recorded Bedrock game state and is a separate integration.")
+        pageContainer.addView(timeline)
+    }
+
+    private fun buildAccountsPage() {
+        val hero = card()
+        addEyebrow(hero, "ACCOUNT MANAGER")
+        addTitle(hero, null, "Switch without the long detour.")
+        addBody(hero, null, "Riplow's account manager will use the official Microsoft sign-in flow. This build cannot yet change the account active inside Minecraft, so it will not fake a successful account swap.")
+        hero.addView(Button(this).apply {
+            text = "Open Minecraft"
+            isAllCaps = false
+            setOnClickListener { launchMinecraft() }
+        }, buttonParams())
+        pageContainer.addView(hero)
+
+        val account = card()
+        addEyebrow(account, "CURRENT STATUS")
+        addTitle(account, null, "Minecraft account")
+        addBody(account, null, "Managed by Minecraft • account linking not connected")
+        pageContainer.addView(account)
+
+        val next = card()
+        addEyebrow(next, "PLANNED")
+        addTitle(next, null, "Saved accounts")
+        addBody(next, null, "The target flow is simple: add an account through Microsoft, see the signed-in profiles, tap one, then launch Minecraft if the supported game sign-in flow allows it. Tokens will not be copied between apps.")
+        pageContainer.addView(next)
+    }
+
+    private var moduleSearchQuery = ""
+    private var moduleCategory = "All"
+    private var moduleDisplayLimit = 24
+
     private fun buildModulesPage() {
         val summary = card()
-        addEyebrow(summary, "MODULE LIBRARY")
-        addTitle(summary, null, ModuleRegistry.all.size.toString() + " focused modules")
+        addEyebrow(summary, "RIPLOW MODULES")
+        addTitle(summary, null, "Make it yours.")
+        addBody(summary, null, "Find tools fast. Only modules that really work can be switched on.")
+        val search = EditText(this).apply {
+            hint = "Search modules..."
+            singleLine = true
+            textSize = 13f
+            setTextColor(getColor(R.color.riplow_foreground))
+            setHintTextColor(getColor(R.color.riplow_muted))
+            setPadding(dp(13), 0, dp(13), 0)
+            background = getDrawable(R.drawable.bg_chip)
+            setText(moduleSearchQuery)
+        }
+        summary.addView(search, LinearLayout.LayoutParams(-1, dp(44)).apply {
+            setMargins(0, dp(10), 0, dp(5))
+        })
         pageContainer.addView(summary)
 
-        ModuleRegistry.all.groupBy { it.category }.forEach { (category, modules) ->
-            val label = TextView(this).apply {
-                text = category.uppercase(Locale.getDefault())
-                textSize = 11f
-                setTextColor(getColor(R.color.riplow_muted))
-                letterSpacing = 0.08f
-                setPadding(dp(2), dp(16), dp(2), dp(8))
-            }
-            pageContainer.addView(label)
+        val categories = listOf(
+            "All", "Performance", "Optimization", "HUD", "Visual",
+            "Network", "Minecraft", "Client", "World", "Motion", "Combat", "Misc"
+        )
+        val categoryScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            clipToPadding = false
+            setPadding(dp(2), dp(2), dp(2), dp(6))
+        }
+        val categoryRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        categoryScroll.addView(categoryRow)
+        pageContainer.addView(categoryScroll)
 
-            modules.chunked(2).forEach { pair ->
-                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                pair.forEach { module -> row.addView(moduleCard(module), weightParams(1f)) }
-                if (pair.size == 1) row.addView(View(this), weightParams(1f))
-                pageContainer.addView(row)
+        val count = TextView(this).apply {
+            textSize = 10f
+            setTextColor(getColor(R.color.riplow_muted))
+            setPadding(dp(4), dp(4), dp(4), dp(8))
+        }
+        pageContainer.addView(count)
+
+        val listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        pageContainer.addView(listContainer)
+
+
+
+
+
+        fun renderModules() {
+            listContainer.removeAllViews()
+            val query = moduleSearchQuery.trim().lowercase(Locale.getDefault())
+            val filtered = ModuleRegistry.all.filter { module ->
+                (moduleCategory == "All" || module.category.equals(moduleCategory, true)) &&
+                    (query.isEmpty() || module.title.lowercase(Locale.getDefault()).contains(query) ||
+                        module.category.lowercase(Locale.getDefault()).contains(query) ||
+                        module.id.replace('_', ' ').lowercase(Locale.getDefault()).contains(query))
+            }
+            count.text = filtered.size.toString() + " modules  •  " +
+                filtered.count { ModuleCapabilities.availability(it.id) == ModuleAvailability.READY }.toString() +
+                " ready"
+
+            if (filtered.isEmpty()) {
+                val empty = card()
+                addTitle(empty, null, "No modules found")
+                addBody(empty, null, "Try another name or category.")
+                listContainer.addView(empty)
+                return
+            }
+
+            val visibleModules = filtered.take(moduleDisplayLimit)
+            visibleModules.groupBy { it.category }.forEach { (category, modules) ->
+                if (moduleCategory == "All") {
+                    val label = TextView(this).apply {
+                        text = category.uppercase(Locale.getDefault())
+                        textSize = 10f
+                        setTextColor(getColor(R.color.riplow_muted))
+                        letterSpacing = 0.1f
+                        setPadding(dp(5), dp(12), dp(5), dp(5))
+                    }
+                    listContainer.addView(label)
+                }
+                modules.chunked(2).forEach { pair ->
+                    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                    pair.forEach { module -> row.addView(moduleCard(module), weightParams(1f)) }
+                    if (pair.size == 1) row.addView(View(this), weightParams(1f))
+                    listContainer.addView(row)
+                }
+            }
+
+            if (filtered.size > visibleModules.size) {
+                listContainer.addView(Button(this).apply {
+                    text = "Show more  •  " + (filtered.size - visibleModules.size).toString() + " left"
+                    isAllCaps = false
+                    setOnClickListener {
+                        moduleDisplayLimit += 24
+                        renderModules()
+                    }
+                }, buttonParams())
             }
         }
+
+        fun renderCategories() {
+            categoryRow.removeAllViews()
+            categories.forEach { category ->
+                val selected = category == moduleCategory
+                categoryRow.addView(Button(this).apply {
+                    text = category
+                    isAllCaps = false
+                    textSize = 10f
+                    minHeight = 0
+                    minWidth = 0
+                    setPadding(dp(13), 0, dp(13), 0)
+                    setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
+                    setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                    setOnClickListener {
+                        moduleCategory = category
+                        moduleDisplayLimit = 24
+                        renderCategories()
+                        renderModules()
+                    }
+                }, LinearLayout.LayoutParams(-2, dp(34)).apply {
+                    setMargins(dp(3), 0, dp(3), 0)
+                })
+            }
+        }
+
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                moduleSearchQuery = s?.toString().orEmpty()
+                moduleDisplayLimit = 24
+                renderModules()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) = Unit
+        })
+
+        renderCategories()
+        renderModules()
     }
 
     private fun buildPacksPage() {
@@ -261,6 +466,28 @@ class MainActivity : AppCompatActivity() {
             type = "*/*"
         }
         startActivityForResult(intent, REQUEST_IMPORT_MINECRAFT_CONTENT)
+    }
+
+    private fun chooseSavedClip() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "video/*"
+        }
+        startActivityForResult(intent, REQUEST_OPEN_CLIP)
+    }
+
+    private fun openSavedClip(uri: Uri) {
+        val mime = contentResolver.getType(uri) ?: "video/mp4"
+        val viewer = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            startActivity(Intent.createChooser(viewer, "Open replay clip"))
+            status.text = "Opening saved clip"
+        } catch (_: ActivityNotFoundException) {
+            status.text = "No video player can open this clip"
+        }
     }
 
     private fun openMinecraftContent(uri: Uri) {
@@ -546,38 +773,72 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun moduleCard(module: ModuleDefinition): View {
-        val card = card()
-        addTitle(card, null, module.title)
-        val availability = ModuleCapabilities.availability(module.id)
-        val stateText = when (availability) {
-            ModuleAvailability.READY -> if (ModuleManager.isEnabled(prefs, module.id)) "ON" else "OFF"
-            ModuleAvailability.NATIVE_TELEMETRY -> "TELEMETRY"
-            ModuleAvailability.GAME_BRIDGE_REQUIRED -> "BRIDGE REQUIRED"
-            ModuleAvailability.PLANNED -> "PLANNED"
+        val card = card().apply {
+            setPadding(dp(13), dp(12), dp(13), dp(12))
         }
-        card.addView(TextView(this).apply {
+        val availability = ModuleCapabilities.availability(module.id)
+        val enabled = availability == ModuleAvailability.READY && ModuleManager.isEnabled(prefs, module.id)
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val title = TextView(this).apply {
+            text = module.title
+            textSize = 13f
+            maxLines = 2
+            setTextColor(getColor(R.color.riplow_foreground))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        heading.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        val stateText = when (availability) {
+            ModuleAvailability.READY -> if (enabled) "ON" else "OFF"
+            ModuleAvailability.NATIVE_TELEMETRY -> "DATA"
+            ModuleAvailability.GAME_BRIDGE_REQUIRED -> "BRIDGE"
+            ModuleAvailability.PLANNED -> "SOON"
+        }
+        heading.addView(TextView(this).apply {
             text = stateText
-            textSize = 10f
-            setTextColor(getColor(R.color.riplow_secondary))
-            setPadding(0, dp(8), 0, dp(4))
-        })
+            textSize = 8f
+            letterSpacing = 0.05f
+            setTextColor(getColor(if (enabled) R.color.riplow_foreground else R.color.riplow_secondary))
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            background = getDrawable(R.drawable.bg_chip)
+        }, LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(5), 0, 0, 0) })
+        card.addView(heading)
 
         if (availability == ModuleAvailability.READY) {
             card.addView(TextView(this).apply {
                 text = ModuleRuntime.status(this@MainActivity, prefs, module)
-                textSize = 11f
+                textSize = 10f
+                maxLines = 2
                 setTextColor(getColor(R.color.riplow_secondary))
-                setPadding(0, dp(6), 0, dp(4))
+                setPadding(0, dp(5), 0, 0)
             })
-
             card.addView(Button(this).apply {
-                text = if (ModuleManager.isEnabled(prefs, module.id)) "Disable" else "Enable"
+                text = if (enabled) "Turn off" else "Turn on"
                 isAllCaps = false
+                textSize = 10f
                 setOnClickListener {
                     ModuleManager.toggle(prefs, module.id)
                     showPage(Page.MODULES)
                 }
-            }, buttonParams())
+            }, LinearLayout.LayoutParams(-1, dp(36)).apply { setMargins(0, dp(7), 0, 0) })
+        } else {
+            card.setOnClickListener {
+                val message = when (availability) {
+                    ModuleAvailability.NATIVE_TELEMETRY -> "This module reads telemetry available to Riplow. It is not a game-renderer toggle."
+                    ModuleAvailability.GAME_BRIDGE_REQUIRED -> "This feature needs a compatible Minecraft Bedrock integration before it can work in-game."
+                    ModuleAvailability.PLANNED -> "This feature is planned but is not implemented yet."
+                    ModuleAvailability.READY -> ""
+                }
+                android.app.AlertDialog.Builder(this)
+                    .setTitle(module.title)
+                    .setMessage(message)
+                    .setPositiveButton("Got it", null)
+                    .show()
+            }
+            card.isClickable = true
+            card.isFocusable = true
         }
 
         module.settings.forEach { setting ->
@@ -585,12 +846,12 @@ class MainActivity : AppCompatActivity() {
             card.addView(Button(this).apply {
                 text = setting.title + ": " + current
                 isAllCaps = false
-                textSize = 11f
+                textSize = 10f
                 setOnClickListener {
                     ModuleManager.cycleSetting(prefs, module.id, setting)
                     showPage(Page.MODULES)
                 }
-            }, buttonParams())
+            }, LinearLayout.LayoutParams(-1, dp(34)).apply { setMargins(0, dp(6), 0, 0) })
         }
 
         return card
@@ -670,6 +931,7 @@ class MainActivity : AppCompatActivity() {
                     showPage(Page.SETTINGS)
                 }
                 REQUEST_IMPORT_MINECRAFT_CONTENT -> openMinecraftContent(uri)
+                REQUEST_OPEN_CLIP -> openSavedClip(uri)
             }
         } catch (_: Throwable) {
             status.text = "Profile operation failed"
@@ -696,6 +958,14 @@ class MainActivity : AppCompatActivity() {
         addTitle(card, null, title)
         addBody(card, null, body)
         return card
+    }
+
+    private fun quickCard(eyebrow: String, title: String, body: String, page: Page): View {
+        return infoCard(eyebrow, title, body).apply {
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { showPage(page) }
+        }
     }
 
     private fun card(): LinearLayout = LinearLayout(this).apply {

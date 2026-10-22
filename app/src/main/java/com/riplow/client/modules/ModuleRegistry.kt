@@ -26,6 +26,18 @@ object ModuleRegistry {
             listOf(ModuleSetting("interval", "Refresh", listOf("1s", "3s", "5s"), "3s"))),
         ModuleDefinition("battery_guard", "Battery Monitor", "Performance"),
 
+        // Optimization tools that need a compatible Bedrock-side integration.
+        ModuleDefinition("entity_culling", "Entity Culling", "Optimization"),
+        ModuleDefinition("particle_culling", "Particle Culling", "Optimization"),
+        ModuleDefinition("texture_optimizer", "Texture Optimizer", "Optimization"),
+        ModuleDefinition("frame_gen", "Frame Gen", "Optimization"),
+
+        // Replay and account tools stay visibly planned until their real workflows land.
+        ModuleDefinition("replay_studio", "Replay Studio", "Client"),
+        ModuleDefinition("instant_replay", "Instant Replay", "Client"),
+        ModuleDefinition("account_manager", "Account Manager", "Client"),
+        ModuleDefinition("quick_account_switch", "Quick Account Switch", "Client"),
+
         ModuleDefinition("session_timer", "Session Timer", "HUD",
             listOf(ModuleSetting("format", "Format", listOf("MM:SS", "HH:MM:SS")))),
         ModuleDefinition("clock", "Clock", "HUD",

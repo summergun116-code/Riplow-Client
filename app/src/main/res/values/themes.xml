@@ -2,10 +2,40 @@
 <resources>
     <style name="Theme.Riplow" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#E6E8EC</item>
+        <item name="colorAccent">#E6E8EC</item>
+        <item name="buttonStyle">@style/Widget.Riplow.Button</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">@color/riplow_background</item>
         <item name="android:navigationBarColor">@color/riplow_background</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Widget.Riplow.Button" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_button</item>
+        <item name="android:textColor">@color/riplow_foreground</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:minHeight">42dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="Widget.Riplow.NavButton" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_nav_idle</item>
+        <item name="android:textColor">@color/riplow_secondary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:gravity">center_vertical|start</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
     </style>
 </resources>
