@@ -337,30 +337,9 @@ class MainActivity : AppCompatActivity() {
         val listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         pageContainer.addView(listContainer)
 
-        fun renderCategories() {
-            categoryRow.removeAllViews()
-            categories.forEach { category ->
-                val selected = category == moduleCategory
-                categoryRow.addView(Button(this).apply {
-                    text = category
-                    isAllCaps = false
-                    textSize = 10f
-                    minHeight = 0
-                    minWidth = 0
-                    setPadding(dp(13), 0, dp(13), 0)
-                    setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
-                    setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
-                    setOnClickListener {
-                        moduleCategory = category
-                        moduleDisplayLimit = 24
-                        renderCategories()
-                        renderModules()
-                    }
-                }, LinearLayout.LayoutParams(-2, dp(34)).apply {
-                    setMargins(dp(3), 0, dp(3), 0)
-                })
-            }
-        }
+
+
+
 
         fun renderModules() {
             listContainer.removeAllViews()
@@ -412,6 +391,31 @@ class MainActivity : AppCompatActivity() {
                         renderModules()
                     }
                 }, buttonParams())
+            }
+        }
+
+        fun renderCategories() {
+            categoryRow.removeAllViews()
+            categories.forEach { category ->
+                val selected = category == moduleCategory
+                categoryRow.addView(Button(this).apply {
+                    text = category
+                    isAllCaps = false
+                    textSize = 10f
+                    minHeight = 0
+                    minWidth = 0
+                    setPadding(dp(13), 0, dp(13), 0)
+                    setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
+                    setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                    setOnClickListener {
+                        moduleCategory = category
+                        moduleDisplayLimit = 24
+                        renderCategories()
+                        renderModules()
+                    }
+                }, LinearLayout.LayoutParams(-2, dp(34)).apply {
+                    setMargins(dp(3), 0, dp(3), 0)
+                })
             }
         }
 
