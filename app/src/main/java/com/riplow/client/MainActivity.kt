@@ -292,6 +292,7 @@ class MainActivity : AppCompatActivity() {
 
     private var moduleSearchQuery = ""
     private var moduleCategory = "All"
+    private var moduleDisplayLimit = 24
 
     private fun buildModulesPage() {
         val summary = card()
@@ -351,6 +352,7 @@ class MainActivity : AppCompatActivity() {
                     setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
                     setOnClickListener {
                         moduleCategory = category
+                        moduleDisplayLimit = 24
                         renderCategories()
                         renderModules()
                     }
@@ -381,7 +383,8 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            filtered.groupBy { it.category }.forEach { (category, modules) ->
+            val visibleModules = filtered.take(moduleDisplayLimit)
+            visibleModules.groupBy { it.category }.forEach { (category, modules) ->
                 if (moduleCategory == "All") {
                     val label = TextView(this).apply {
                         text = category.uppercase(Locale.getDefault())
@@ -399,12 +402,24 @@ class MainActivity : AppCompatActivity() {
                     listContainer.addView(row)
                 }
             }
+
+            if (filtered.size > visibleModules.size) {
+                listContainer.addView(Button(this).apply {
+                    text = "Show more  •  " + (filtered.size - visibleModules.size).toString() + " left"
+                    isAllCaps = false
+                    setOnClickListener {
+                        moduleDisplayLimit += 24
+                        renderModules()
+                    }
+                }, buttonParams())
+            }
         }
 
         search.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 moduleSearchQuery = s?.toString().orEmpty()
+                moduleDisplayLimit = 24
                 renderModules()
             }
             override fun afterTextChanged(s: android.text.Editable?) = Unit
