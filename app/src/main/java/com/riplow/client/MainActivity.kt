@@ -290,29 +290,128 @@ class MainActivity : AppCompatActivity() {
         pageContainer.addView(next)
     }
 
+    private var moduleSearchQuery = ""
+    private var moduleCategory = "All"
+
     private fun buildModulesPage() {
         val summary = card()
-        addEyebrow(summary, "MODULE LIBRARY")
-        addTitle(summary, null, ModuleRegistry.all.size.toString() + " focused modules")
+        addEyebrow(summary, "RIPLOW MODULES")
+        addTitle(summary, null, "Make it yours.")
+        addBody(summary, null, "Find tools fast. Only modules that really work can be switched on.")
+        val search = EditText(this).apply {
+            hint = "Search modules..."
+            singleLine = true
+            textSize = 13f
+            setTextColor(getColor(R.color.riplow_foreground))
+            setHintTextColor(getColor(R.color.riplow_muted))
+            setPadding(dp(13), 0, dp(13), 0)
+            background = getDrawable(R.drawable.bg_chip)
+            setText(moduleSearchQuery)
+        }
+        summary.addView(search, LinearLayout.LayoutParams(-1, dp(44)).apply {
+            setMargins(0, dp(10), 0, dp(5))
+        })
         pageContainer.addView(summary)
 
-        ModuleRegistry.all.groupBy { it.category }.forEach { (category, modules) ->
-            val label = TextView(this).apply {
-                text = category.uppercase(Locale.getDefault())
-                textSize = 11f
-                setTextColor(getColor(R.color.riplow_muted))
-                letterSpacing = 0.08f
-                setPadding(dp(2), dp(16), dp(2), dp(8))
-            }
-            pageContainer.addView(label)
+        val categories = listOf(
+            "All", "Performance", "Optimization", "HUD", "Visual",
+            "Network", "Minecraft", "Client", "World", "Motion", "Combat", "Misc"
+        )
+        val categoryScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            clipToPadding = false
+            setPadding(dp(2), dp(2), dp(2), dp(6))
+        }
+        val categoryRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        categoryScroll.addView(categoryRow)
+        pageContainer.addView(categoryScroll)
 
-            modules.chunked(2).forEach { pair ->
-                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                pair.forEach { module -> row.addView(moduleCard(module), weightParams(1f)) }
-                if (pair.size == 1) row.addView(View(this), weightParams(1f))
-                pageContainer.addView(row)
+        val count = TextView(this).apply {
+            textSize = 10f
+            setTextColor(getColor(R.color.riplow_muted))
+            setPadding(dp(4), dp(4), dp(4), dp(8))
+        }
+        pageContainer.addView(count)
+
+        val listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        pageContainer.addView(listContainer)
+
+        fun renderCategories() {
+            categoryRow.removeAllViews()
+            categories.forEach { category ->
+                val selected = category == moduleCategory
+                categoryRow.addView(Button(this).apply {
+                    text = category
+                    isAllCaps = false
+                    textSize = 10f
+                    minHeight = 0
+                    minWidth = 0
+                    setPadding(dp(13), 0, dp(13), 0)
+                    setTextColor(getColor(if (selected) R.color.riplow_foreground else R.color.riplow_secondary))
+                    setBackgroundResource(if (selected) R.drawable.bg_nav_active else R.drawable.bg_nav_idle)
+                    setOnClickListener {
+                        moduleCategory = category
+                        renderCategories()
+                        renderModules()
+                    }
+                }, LinearLayout.LayoutParams(-2, dp(34)).apply {
+                    setMargins(dp(3), 0, dp(3), 0)
+                })
             }
         }
+
+        fun renderModules() {
+            listContainer.removeAllViews()
+            val query = moduleSearchQuery.trim().lowercase(Locale.getDefault())
+            val filtered = ModuleRegistry.all.filter { module ->
+                (moduleCategory == "All" || module.category.equals(moduleCategory, true)) &&
+                    (query.isEmpty() || module.title.lowercase(Locale.getDefault()).contains(query) ||
+                        module.category.lowercase(Locale.getDefault()).contains(query) ||
+                        module.id.replace('_', ' ').lowercase(Locale.getDefault()).contains(query))
+            }
+            count.text = filtered.size.toString() + " modules  •  " +
+                filtered.count { ModuleCapabilities.availability(it.id) == ModuleAvailability.READY }.toString() +
+                " ready"
+
+            if (filtered.isEmpty()) {
+                val empty = card()
+                addTitle(empty, null, "No modules found")
+                addBody(empty, null, "Try another name or category.")
+                listContainer.addView(empty)
+                return
+            }
+
+            filtered.groupBy { it.category }.forEach { (category, modules) ->
+                if (moduleCategory == "All") {
+                    val label = TextView(this).apply {
+                        text = category.uppercase(Locale.getDefault())
+                        textSize = 10f
+                        setTextColor(getColor(R.color.riplow_muted))
+                        letterSpacing = 0.1f
+                        setPadding(dp(5), dp(12), dp(5), dp(5))
+                    }
+                    listContainer.addView(label)
+                }
+                modules.chunked(2).forEach { pair ->
+                    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                    pair.forEach { module -> row.addView(moduleCard(module), weightParams(1f)) }
+                    if (pair.size == 1) row.addView(View(this), weightParams(1f))
+                    listContainer.addView(row)
+                }
+            }
+        }
+
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                moduleSearchQuery = s?.toString().orEmpty()
+                renderModules()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) = Unit
+        })
+
+        renderCategories()
+        renderModules()
     }
 
     private fun buildPacksPage() {
@@ -655,38 +754,72 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun moduleCard(module: ModuleDefinition): View {
-        val card = card()
-        addTitle(card, null, module.title)
-        val availability = ModuleCapabilities.availability(module.id)
-        val stateText = when (availability) {
-            ModuleAvailability.READY -> if (ModuleManager.isEnabled(prefs, module.id)) "ON" else "OFF"
-            ModuleAvailability.NATIVE_TELEMETRY -> "TELEMETRY"
-            ModuleAvailability.GAME_BRIDGE_REQUIRED -> "BRIDGE REQUIRED"
-            ModuleAvailability.PLANNED -> "PLANNED"
+        val card = card().apply {
+            setPadding(dp(13), dp(12), dp(13), dp(12))
         }
-        card.addView(TextView(this).apply {
+        val availability = ModuleCapabilities.availability(module.id)
+        val enabled = availability == ModuleAvailability.READY && ModuleManager.isEnabled(prefs, module.id)
+        val heading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val title = TextView(this).apply {
+            text = module.title
+            textSize = 13f
+            maxLines = 2
+            setTextColor(getColor(R.color.riplow_foreground))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        heading.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        val stateText = when (availability) {
+            ModuleAvailability.READY -> if (enabled) "ON" else "OFF"
+            ModuleAvailability.NATIVE_TELEMETRY -> "DATA"
+            ModuleAvailability.GAME_BRIDGE_REQUIRED -> "BRIDGE"
+            ModuleAvailability.PLANNED -> "SOON"
+        }
+        heading.addView(TextView(this).apply {
             text = stateText
-            textSize = 10f
-            setTextColor(getColor(R.color.riplow_secondary))
-            setPadding(0, dp(8), 0, dp(4))
-        })
+            textSize = 8f
+            letterSpacing = 0.05f
+            setTextColor(getColor(if (enabled) R.color.riplow_foreground else R.color.riplow_secondary))
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+            background = getDrawable(R.drawable.bg_chip)
+        }, LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(5), 0, 0, 0) })
+        card.addView(heading)
 
         if (availability == ModuleAvailability.READY) {
             card.addView(TextView(this).apply {
                 text = ModuleRuntime.status(this@MainActivity, prefs, module)
-                textSize = 11f
+                textSize = 10f
+                maxLines = 2
                 setTextColor(getColor(R.color.riplow_secondary))
-                setPadding(0, dp(6), 0, dp(4))
+                setPadding(0, dp(5), 0, 0)
             })
-
             card.addView(Button(this).apply {
-                text = if (ModuleManager.isEnabled(prefs, module.id)) "Disable" else "Enable"
+                text = if (enabled) "Turn off" else "Turn on"
                 isAllCaps = false
+                textSize = 10f
                 setOnClickListener {
                     ModuleManager.toggle(prefs, module.id)
                     showPage(Page.MODULES)
                 }
-            }, buttonParams())
+            }, LinearLayout.LayoutParams(-1, dp(36)).apply { setMargins(0, dp(7), 0, 0) })
+        } else {
+            card.setOnClickListener {
+                val message = when (availability) {
+                    ModuleAvailability.NATIVE_TELEMETRY -> "This module reads telemetry available to Riplow. It is not a game-renderer toggle."
+                    ModuleAvailability.GAME_BRIDGE_REQUIRED -> "This feature needs a compatible Minecraft Bedrock integration before it can work in-game."
+                    ModuleAvailability.PLANNED -> "This feature is planned but is not implemented yet."
+                    ModuleAvailability.READY -> ""
+                }
+                android.app.AlertDialog.Builder(this)
+                    .setTitle(module.title)
+                    .setMessage(message)
+                    .setPositiveButton("Got it", null)
+                    .show()
+            }
+            card.isClickable = true
+            card.isFocusable = true
         }
 
         module.settings.forEach { setting ->
@@ -694,12 +827,12 @@ class MainActivity : AppCompatActivity() {
             card.addView(Button(this).apply {
                 text = setting.title + ": " + current
                 isAllCaps = false
-                textSize = 11f
+                textSize = 10f
                 setOnClickListener {
                     ModuleManager.cycleSetting(prefs, module.id, setting)
                     showPage(Page.MODULES)
                 }
-            }, buttonParams())
+            }, LinearLayout.LayoutParams(-1, dp(34)).apply { setMargins(0, dp(6), 0, 0) })
         }
 
         return card
